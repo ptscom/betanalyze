@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { computeBetOutcomes } from "@/lib/engine/outcomes";
+import { computeBetOutcomes, getCloseDate } from "@/lib/engine/outcomes";
 import { buildAlignedTimeline } from "@/lib/engine/timeline";
 import type {
   PeriodAggregateResult,
@@ -109,13 +109,11 @@ export function analyzeBetPeriod(
   periodDays: PeriodDays,
 ): PeriodBetResult {
   const outcomes = computeBetOutcomes(bet);
-  const closeDate = bet.endDate;
+  const closeDate = getCloseDate(bet);
   const checkDate = addDays(startOfDay(closeDate), -periodDays);
   const timeline = buildAlignedTimeline(bet);
   const hasEnoughHistory = bet.startDate.getTime() <= checkDate.getTime();
-  const winnerNames = outcomes.candidates
-    .filter((candidate) => candidate.isWinner)
-    .map((candidate) => candidate.name);
+  const winnerNames = outcomes.winner ? [outcomes.winner] : [];
 
   const checkSnapshot = findSnapshotAtOrBefore(timeline, checkDate);
   const rankings = checkSnapshot ? rankAtSnapshot(checkSnapshot.prices) : [];
@@ -135,7 +133,7 @@ export function analyzeBetPeriod(
     leaderPriceAtCheck: leader?.price ?? null,
     leaderRankAtCheck: leader?.rank ?? null,
     leaderFinalPlace: leaderOutcome?.place ?? null,
-    leaderWon: leaderOutcome?.isWinner ?? false,
+    leaderWon: leader?.name === outcomes.winner,
     actualWinner: outcomes.winner,
     winnerNames,
     periodChartData: hasEnoughHistory

@@ -16,14 +16,15 @@ After adding or changing Excel files in `data/bets/`, rerun `npm run build:data`
 
 ## Add your data
 
-1. Export or copy your bet Excel files into `data/bets/`
-2. Keep the expected columns:
-   - `Logged At`
-   - `Section` (candidate name)
-   - `Displayed Market Price`
-3. Rebuild or restart the dev server to reload files
+Drop your Excel exports into `data/bets/`. Each file is one bet (market/race).
+**Each candidate has their own sheet tab** in the workbook — the parser reads every tab.
 
-A candidate is treated as the winner when their **latest** displayed market price is **above $0.90**.
+Expected columns per sheet:
+- `Logged At`
+- `Section` (optional when using one candidate per tab)
+- `Displayed Market Price`
+
+The winner is whoever has the **highest final price** at market close (usually above $0.90).
 
 ## Analyses
 

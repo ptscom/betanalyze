@@ -54,18 +54,9 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
           hint={`of ${analysis.totalBets} total`}
         />
         <StatCard
-          label="Leaders who won"
-          value={String(analysis.leadersWhoWon)}
-          hint={`${formatPercent(analysis.winRate)} win rate`}
-        />
-        <StatCard
-          label="Avg final place"
-          value={
-            analysis.avgFinalPlace != null
-              ? analysis.avgFinalPlace.toFixed(2)
-              : "—"
-          }
-          hint="for period leader"
+          label="Leader became winner"
+          value={formatPercent(analysis.winRate)}
+          hint={`${analysis.leadersWhoWon} of ${analysis.eligibleBets} bets`}
         />
         <StatCard
           label="Check window"
@@ -160,20 +151,20 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
           <h3 className="text-lg font-semibold text-zinc-900">How to read this</h3>
           <ul className="mt-3 space-y-2 text-sm text-zinc-600">
             <li>
+              Each Excel file is one bet. Every sheet tab is a candidate&apos;s
+              price history.
+            </li>
+            <li>
               On the check date ({analysis.periodDays} days before close), we
-              identify whoever had the highest market price.
+              find whoever had the highest market price.
             </li>
             <li>
-              We then track whether that leader went on to win (price &gt; $0.90
-              at close).
+              The winner at close is whoever has the highest final price (usually
+              above $0.90).
             </li>
             <li>
-              The price evolution chart shows if winners were already separating
-              from the pack early in the window.
-            </li>
-            <li>
-              The bracket chart helps spot correlations — e.g. winners already
-              above $0.50 with {analysis.periodDays} days left.
+              &quot;Leader became winner&quot; means the check-date leader also
+              had the highest price at close.
             </li>
           </ul>
         </div>
@@ -204,7 +195,7 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
                     Final place
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Won?
+                    Became winner?
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Actual winner
