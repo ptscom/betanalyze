@@ -51,26 +51,50 @@ function betNameFromFilename(filename: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function parseWorkbookBuffer(
-  buffer: Buffer,
-  filename: string,
-): BetMarket {
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
-    throw new Error(`No sheets found in ${filename}`);
-  }
-
-  const sheet = workbook.Sheets[sheetName];
+function parseSheetRows(
+  sheet: XLSX.WorkSheet,
+  candidateName: string,
+): PricePoint[] {
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
     header: 1,
     defval: "",
     raw: false,
   });
 
-  if (rows.length < 2) {
-    throw new Error(`No data rows found in ${filename}`);
+  if (rows.length < 2) return [];
+
+  const headers = (rows[0] as unknown[]).map(normalizeHeader);
+  const loggedAtIdx = findColumnIndex(headers, COLUMN_ALIASES.loggedAt);
+  const priceIdx = findColumnIndex(headers, COLUMN_ALIASES.price);
+
+  if (loggedAtIdx === -1 || priceIdx === -1) {
+    return [];
   }
+
+  const points: PricePoint[] = [];
+
+  for (const row of rows.slice(1)) {
+    if (!Array.isArray(row)) continue;
+
+    const loggedAt = parseDate(row[loggedAtIdx]);
+    const price = parsePrice(row[priceIdx]);
+
+    if (!loggedAt || price == null) continue;
+
+    points.push({ loggedAt, price });
+  }
+
+  return points.sort((a, b) => a.loggedAt.getTime() - b.loggedAt.getTime());
+}
+
+function parseSheetBySections(sheet: XLSX.WorkSheet): CandidateSeries[] {
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: "",
+    raw: false,
+  });
+
+  if (rows.length < 2) return [];
 
   const headers = (rows[0] as unknown[]).map(normalizeHeader);
   const loggedAtIdx = findColumnIndex(headers, COLUMN_ALIASES.loggedAt);
@@ -78,9 +102,7 @@ export function parseWorkbookBuffer(
   const priceIdx = findColumnIndex(headers, COLUMN_ALIASES.price);
 
   if (loggedAtIdx === -1 || sectionIdx === -1 || priceIdx === -1) {
-    throw new Error(
-      `Missing required columns in ${filename}. Expected Logged At, Section, and Displayed Market Price.`,
-    );
+    return [];
   }
 
   const byCandidate = new Map<string, PricePoint[]>();
@@ -99,11 +121,7 @@ export function parseWorkbookBuffer(
     byCandidate.set(candidate, points);
   }
 
-  if (byCandidate.size === 0) {
-    throw new Error(`No valid price rows found in ${filename}`);
-  }
-
-  const candidates: CandidateSeries[] = [...byCandidate.entries()]
+  return [...byCandidate.entries()]
     .map(([name, points]) => ({
       name,
       points: points.sort(
@@ -111,6 +129,52 @@ export function parseWorkbookBuffer(
       ),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function parseMultiSheetWorkbook(workbook: XLSX.WorkBook): CandidateSeries[] {
+  const candidates: CandidateSeries[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const points = parseSheetRows(sheet, sheetName);
+
+    if (points.length > 0) {
+      candidates.push({ name: sheetName, points });
+    }
+  }
+
+  return candidates.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function parseWorkbookBuffer(
+  buffer: Buffer,
+  filename: string,
+): BetMarket {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+
+  if (workbook.SheetNames.length === 0) {
+    throw new Error(`No sheets found in ${filename}`);
+  }
+
+  let candidates: CandidateSeries[];
+
+  if (workbook.SheetNames.length > 1) {
+    candidates = parseMultiSheetWorkbook(workbook);
+  } else {
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    candidates = parseSheetBySections(sheet);
+
+    if (candidates.length === 0) {
+      const points = parseSheetRows(sheet, workbook.SheetNames[0]);
+      if (points.length > 0) {
+        candidates = [{ name: workbook.SheetNames[0], points }];
+      }
+    }
+  }
+
+  if (candidates.length === 0) {
+    throw new Error(`No valid price rows found in ${filename}`);
+  }
 
   const allPoints = candidates.flatMap((candidate) => candidate.points);
   const startDate = new Date(
