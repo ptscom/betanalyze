@@ -3,7 +3,12 @@ import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
-import { PERIOD_OPTIONS } from "@/lib/analyses/types";
+import { analyzeSingleDayJump } from "@/lib/analyses/single-day-jump";
+import {
+  JUMP_THRESHOLD_OPTIONS,
+  PERIOD_OPTIONS,
+  jumpCacheKey,
+} from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   getCacheFilePath,
@@ -11,6 +16,7 @@ import {
   serializeFirstCrossoverAnalysis,
   serializePeriodAnalysis,
   serializeRiseInMaAnalysis,
+  serializeSingleDayJumpAnalysis,
 } from "@/lib/parser/bets-cache";
 import { loadAllBetsFromExcel } from "@/lib/parser/load-bets";
 
@@ -22,6 +28,7 @@ export function buildBetsCache(): BetsCacheFile {
   const periodPerformance: BetsCacheFile["periodPerformance"] = {};
   const firstCrossover: BetsCacheFile["firstCrossover"] = {};
   const riseInMa: BetsCacheFile["riseInMa"] = {};
+  const singleDayJump: BetsCacheFile["singleDayJump"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
     periodPerformance[String(days)] = serializePeriodAnalysis(
@@ -35,6 +42,15 @@ export function buildBetsCache(): BetsCacheFile {
     riseInMa[String(days)] = serializeRiseInMaAnalysis(
       analyzeRiseInMa(bets, days),
     );
+    for (const threshold of JUMP_THRESHOLD_OPTIONS) {
+      console.log(
+        `  Precomputing ${days}-day single day jump (>=${threshold * 100}%)...`,
+      );
+      singleDayJump[jumpCacheKey(days, threshold)] =
+        serializeSingleDayJumpAnalysis(
+          analyzeSingleDayJump(bets, days, threshold),
+        );
+    }
   }
 
   const cache: BetsCacheFile = {
@@ -45,6 +61,7 @@ export function buildBetsCache(): BetsCacheFile {
     periodPerformance,
     firstCrossover,
     riseInMa,
+    singleDayJump,
   };
 
   const outputPath = getCacheFilePath();

@@ -88,6 +88,18 @@ export default function HomePage() {
               average in the window — track win rate by signal price.
             </p>
           </Link>
+          <Link
+            href="/analyze/single-day-jump?days=14&jump=0.1"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Single Day Jump
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with a 10%, 25%, or 50% single-day price jump in
+              the window — track final win rate by jump size.
+            </p>
+          </Link>
         </div>
       </section>
 
