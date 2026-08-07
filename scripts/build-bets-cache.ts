@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
+import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
 import { PERIOD_OPTIONS } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
@@ -9,6 +10,7 @@ import {
   serializeBet,
   serializeFirstCrossoverAnalysis,
   serializePeriodAnalysis,
+  serializeRiseInMaAnalysis,
 } from "@/lib/parser/bets-cache";
 import { loadAllBetsFromExcel } from "@/lib/parser/load-bets";
 
@@ -19,6 +21,7 @@ export function buildBetsCache(): BetsCacheFile {
 
   const periodPerformance: BetsCacheFile["periodPerformance"] = {};
   const firstCrossover: BetsCacheFile["firstCrossover"] = {};
+  const riseInMa: BetsCacheFile["riseInMa"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
     periodPerformance[String(days)] = serializePeriodAnalysis(
@@ -27,6 +30,10 @@ export function buildBetsCache(): BetsCacheFile {
     console.log(`  Precomputing ${days}-day first crossover analysis...`);
     firstCrossover[String(days)] = serializeFirstCrossoverAnalysis(
       analyzeFirstCrossover(bets, days),
+    );
+    console.log(`  Precomputing ${days}-day rise in MA analysis...`);
+    riseInMa[String(days)] = serializeRiseInMaAnalysis(
+      analyzeRiseInMa(bets, days),
     );
   }
 
@@ -37,6 +44,7 @@ export function buildBetsCache(): BetsCacheFile {
     failures,
     periodPerformance,
     firstCrossover,
+    riseInMa,
   };
 
   const outputPath = getCacheFilePath();

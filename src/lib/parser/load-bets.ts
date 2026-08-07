@@ -5,12 +5,14 @@ import type {
   FirstCrossoverAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
+  RiseInMaAggregateResult,
 } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
   deserializeFirstCrossoverAnalysis,
   deserializePeriodAnalysis,
+  deserializeRiseInMaAnalysis,
   getCacheFilePath,
 } from "@/lib/parser/bets-cache";
 import { parseWorkbookBuffer } from "@/lib/parser/parse-bet-file";
@@ -51,6 +53,7 @@ interface LoadedBetsData {
   failures: FailedBet[];
   periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
   firstCrossover: Map<PeriodDays, FirstCrossoverAggregateResult>;
+  riseInMa: Map<PeriodDays, RiseInMaAggregateResult>;
 }
 
 let memoryCache: LoadedBetsData | null = null;
@@ -98,11 +101,20 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     );
   }
 
+  const riseInMa = new Map<PeriodDays, RiseInMaAggregateResult>();
+  for (const [days, analysis] of Object.entries(raw.riseInMa ?? {})) {
+    riseInMa.set(
+      Number(days) as PeriodDays,
+      deserializeRiseInMaAnalysis(analysis),
+    );
+  }
+
   return {
     bets: raw.bets.map(deserializeBet).sort((a, b) => a.name.localeCompare(b.name)),
     failures: raw.failures,
     periodPerformance,
     firstCrossover,
+    riseInMa,
   };
 }
 
@@ -124,6 +136,7 @@ function ensureCacheLoaded(): LoadedBetsData {
     failures,
     periodPerformance: new Map(),
     firstCrossover: new Map(),
+    riseInMa: new Map(),
   };
 
   return memoryCache;
@@ -189,6 +202,13 @@ export function getCachedFirstCrossover(
 ): FirstCrossoverAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.firstCrossover.get(periodDays) ?? null;
+}
+
+export function getCachedRiseInMa(
+  periodDays: PeriodDays,
+): RiseInMaAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.riseInMa.get(periodDays) ?? null;
 }
 
 export function clearBetsMemoryCache(): void {

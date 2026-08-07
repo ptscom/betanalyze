@@ -65,6 +65,34 @@ export interface FirstCrossoverAggregateResult {
   betResults: FirstCrossoverBetResult[];
 }
 
+export interface RiseInMaBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalMa: number | null;
+  signalAt: Date | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface RiseInMaAggregateResult {
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: PriceBracketWinRate[];
+  betResults: RiseInMaBetResult[];
+}
+
 export interface PeriodAggregateResult {
   periodDays: PeriodDays;
   totalBets: number;

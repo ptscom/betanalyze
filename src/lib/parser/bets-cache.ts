@@ -5,6 +5,7 @@ import type {
   FirstCrossoverAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
+  RiseInMaAggregateResult,
 } from "@/lib/analyses/types";
 
 export interface SerializedPricePoint {
@@ -43,6 +44,34 @@ export interface SerializedPeriodBetResult {
   leaderWon: boolean;
   actualWinner: string | null;
   winnerNames: string[];
+}
+
+export interface SerializedRiseInMaBetResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: PeriodDays;
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalMa: number | null;
+  signalAt: string | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedRiseInMaAggregateResult {
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: RiseInMaAggregateResult["pickPriceWinRates"];
+  betResults: SerializedRiseInMaBetResult[];
 }
 
 export interface SerializedFirstCrossoverBetResult {
@@ -94,6 +123,7 @@ export interface BetsCacheFile {
   failures: SerializedFailedBet[];
   periodPerformance: Record<string, SerializedPeriodAggregateResult>;
   firstCrossover: Record<string, SerializedFirstCrossoverAggregateResult>;
+  riseInMa: Record<string, SerializedRiseInMaAggregateResult>;
 }
 
 export function getCacheFilePath(): string {
@@ -131,6 +161,50 @@ export function deserializeBet(bet: SerializedBetMarket): BetMarket {
     })),
     startDate: new Date(bet.startDate),
     endDate: new Date(bet.endDate),
+  };
+}
+
+export function serializeRiseInMaAnalysis(
+  analysis: RiseInMaAggregateResult,
+): SerializedRiseInMaAggregateResult {
+  return {
+    periodDays: analysis.periodDays,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    picksWhoWon: analysis.picksWhoWon,
+    winRate: analysis.winRate,
+    placeDistribution: analysis.placeDistribution,
+    pickPriceWinRates: analysis.pickPriceWinRates,
+    betResults: analysis.betResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      hasEnoughHistory: result.hasEnoughHistory,
+      hasSignal: result.hasSignal,
+      signalCandidate: result.signalCandidate,
+      signalPrice: result.signalPrice,
+      signalMa: result.signalMa,
+      signalAt: result.signalAt?.toISOString() ?? null,
+      pickFinalPlace: result.pickFinalPlace,
+      pickWon: result.pickWon,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeRiseInMaAnalysis(
+  analysis: SerializedRiseInMaAggregateResult,
+): RiseInMaAggregateResult {
+  return {
+    ...analysis,
+    betResults: analysis.betResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      signalAt: result.signalAt ? new Date(result.signalAt) : null,
+    })),
   };
 }
 

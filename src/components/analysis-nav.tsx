@@ -41,7 +41,7 @@ export function PeriodSelector({ selected }: PeriodSelectorProps) {
 }
 
 interface AnalysisNavProps {
-  active: "period-performance" | "first-crossover";
+  active: "period-performance" | "first-crossover" | "rise-in-ma";
 }
 
 export function AnalysisNav({ active }: AnalysisNavProps) {
@@ -66,6 +66,16 @@ export function AnalysisNav({ active }: AnalysisNavProps) {
         }`}
       >
         First Crossover
+      </Link>
+      <Link
+        href="/analyze/rise-in-ma?days=14"
+        className={`rounded-full px-4 py-2 text-sm font-medium ${
+          active === "rise-in-ma"
+            ? "bg-blue-600 text-white"
+            : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50"
+        }`}
+      >
+        Rise in MA
       </Link>
     </nav>
   );

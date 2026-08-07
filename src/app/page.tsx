@@ -76,6 +76,18 @@ export default function HomePage() {
               or 21 days and track their win rate by crossover price.
             </p>
           </Link>
+          <Link
+            href="/analyze/rise-in-ma?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Rise in MA
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with 2 consecutive days of rising 5-day moving
+              average in the window — track win rate by signal price.
+            </p>
+          </Link>
         </div>
       </section>
 
