@@ -41,7 +41,7 @@ export function PeriodSelector({ selected }: PeriodSelectorProps) {
 }
 
 interface AnalysisNavProps {
-  active: "period-performance";
+  active: "period-performance" | "first-crossover";
 }
 
 export function AnalysisNav({ active }: AnalysisNavProps) {
@@ -56,6 +56,16 @@ export function AnalysisNav({ active }: AnalysisNavProps) {
         }`}
       >
         Period wise Performance
+      </Link>
+      <Link
+        href="/analyze/first-crossover?days=14"
+        className={`rounded-full px-4 py-2 text-sm font-medium ${
+          active === "first-crossover"
+            ? "bg-blue-600 text-white"
+            : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50"
+        }`}
+      >
+        First Crossover
       </Link>
     </nav>
   );

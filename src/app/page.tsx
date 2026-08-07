@@ -61,7 +61,19 @@ export default function HomePage() {
             </h3>
             <p className="mt-2 text-sm text-zinc-600">
               Check who led 7, 14, or 21 days before close and where they finished.
-              Includes price evolution and bracket charts.
+              Includes price evolution and win-rate by starting price.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/first-crossover?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              First Crossover
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              Find the first candidate to overtake the leader in the last 7, 14,
+              or 21 days and track their win rate by crossover price.
             </p>
           </Link>
         </div>

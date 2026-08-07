@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
-import type { PeriodAggregateResult, PeriodDays } from "@/lib/analyses/types";
+import type {
+  FirstCrossoverAggregateResult,
+  PeriodAggregateResult,
+  PeriodDays,
+} from "@/lib/analyses/types";
 
 export interface SerializedPricePoint {
   loggedAt: string;
@@ -41,6 +45,35 @@ export interface SerializedPeriodBetResult {
   winnerNames: string[];
 }
 
+export interface SerializedFirstCrossoverBetResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: PeriodDays;
+  hasEnoughHistory: boolean;
+  hasCrossover: boolean;
+  crossoverCandidate: string | null;
+  crossoverPrice: number | null;
+  crossoverAt: string | null;
+  previousLeader: string | null;
+  previousLeaderPrice: number | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedFirstCrossoverAggregateResult {
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: FirstCrossoverAggregateResult["pickPriceWinRates"];
+  betResults: SerializedFirstCrossoverBetResult[];
+}
+
 export interface SerializedPeriodAggregateResult {
   periodDays: PeriodDays;
   totalBets: number;
@@ -60,6 +93,7 @@ export interface BetsCacheFile {
   bets: SerializedBetMarket[];
   failures: SerializedFailedBet[];
   periodPerformance: Record<string, SerializedPeriodAggregateResult>;
+  firstCrossover: Record<string, SerializedFirstCrossoverAggregateResult>;
 }
 
 export function getCacheFilePath(): string {
@@ -97,6 +131,51 @@ export function deserializeBet(bet: SerializedBetMarket): BetMarket {
     })),
     startDate: new Date(bet.startDate),
     endDate: new Date(bet.endDate),
+  };
+}
+
+export function serializeFirstCrossoverAnalysis(
+  analysis: FirstCrossoverAggregateResult,
+): SerializedFirstCrossoverAggregateResult {
+  return {
+    periodDays: analysis.periodDays,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    picksWhoWon: analysis.picksWhoWon,
+    winRate: analysis.winRate,
+    placeDistribution: analysis.placeDistribution,
+    pickPriceWinRates: analysis.pickPriceWinRates,
+    betResults: analysis.betResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      hasEnoughHistory: result.hasEnoughHistory,
+      hasCrossover: result.hasCrossover,
+      crossoverCandidate: result.crossoverCandidate,
+      crossoverPrice: result.crossoverPrice,
+      crossoverAt: result.crossoverAt?.toISOString() ?? null,
+      previousLeader: result.previousLeader,
+      previousLeaderPrice: result.previousLeaderPrice,
+      pickFinalPlace: result.pickFinalPlace,
+      pickWon: result.pickWon,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeFirstCrossoverAnalysis(
+  analysis: SerializedFirstCrossoverAggregateResult,
+): FirstCrossoverAggregateResult {
+  return {
+    ...analysis,
+    betResults: analysis.betResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      crossoverAt: result.crossoverAt ? new Date(result.crossoverAt) : null,
+    })),
   };
 }
 

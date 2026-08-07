@@ -1,10 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
-import type { PeriodAggregateResult, PeriodDays } from "@/lib/analyses/types";
+import type {
+  FirstCrossoverAggregateResult,
+  PeriodAggregateResult,
+  PeriodDays,
+} from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
+  deserializeFirstCrossoverAnalysis,
   deserializePeriodAnalysis,
   getCacheFilePath,
 } from "@/lib/parser/bets-cache";
@@ -45,6 +50,7 @@ interface LoadedBetsData {
   bets: BetMarket[];
   failures: FailedBet[];
   periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
+  firstCrossover: Map<PeriodDays, FirstCrossoverAggregateResult>;
 }
 
 let memoryCache: LoadedBetsData | null = null;
@@ -77,10 +83,18 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
   ) as BetsCacheFile;
 
   const periodPerformance = new Map<PeriodDays, PeriodAggregateResult>();
-  for (const [days, analysis] of Object.entries(raw.periodPerformance)) {
+  for (const [days, analysis] of Object.entries(raw.periodPerformance ?? {})) {
     periodPerformance.set(
       Number(days) as PeriodDays,
       deserializePeriodAnalysis(analysis),
+    );
+  }
+
+  const firstCrossover = new Map<PeriodDays, FirstCrossoverAggregateResult>();
+  for (const [days, analysis] of Object.entries(raw.firstCrossover ?? {})) {
+    firstCrossover.set(
+      Number(days) as PeriodDays,
+      deserializeFirstCrossoverAnalysis(analysis),
     );
   }
 
@@ -88,6 +102,7 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     bets: raw.bets.map(deserializeBet).sort((a, b) => a.name.localeCompare(b.name)),
     failures: raw.failures,
     periodPerformance,
+    firstCrossover,
   };
 }
 
@@ -108,6 +123,7 @@ function ensureCacheLoaded(): LoadedBetsData {
     bets,
     failures,
     periodPerformance: new Map(),
+    firstCrossover: new Map(),
   };
 
   return memoryCache;
@@ -166,6 +182,13 @@ export function getCachedPeriodPerformance(
 ): PeriodAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.periodPerformance.get(periodDays) ?? null;
+}
+
+export function getCachedFirstCrossover(
+  periodDays: PeriodDays,
+): FirstCrossoverAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.firstCrossover.get(periodDays) ?? null;
 }
 
 export function clearBetsMemoryCache(): void {

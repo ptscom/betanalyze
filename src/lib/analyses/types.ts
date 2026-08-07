@@ -36,6 +36,35 @@ export interface PriceBracketWinRate {
   winRate: number;
 }
 
+export interface FirstCrossoverBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  hasEnoughHistory: boolean;
+  hasCrossover: boolean;
+  crossoverCandidate: string | null;
+  crossoverPrice: number | null;
+  crossoverAt: Date | null;
+  previousLeader: string | null;
+  previousLeaderPrice: number | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface FirstCrossoverAggregateResult {
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: PriceBracketWinRate[];
+  betResults: FirstCrossoverBetResult[];
+}
+
 export interface PeriodAggregateResult {
   periodDays: PeriodDays;
   totalBets: number;
