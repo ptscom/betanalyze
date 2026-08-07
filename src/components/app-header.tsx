@@ -11,8 +11,11 @@ export default function AppHeader() {
           <Link href="/" className="hover:text-zinc-900">
             Dashboard
           </Link>
-          <Link href="/strategies" className="hover:text-zinc-900">
-            Strategies
+          <Link
+            href="/analyze/period-performance?days=14"
+            className="hover:text-zinc-900"
+          >
+            Analyses
           </Link>
         </nav>
       </div>

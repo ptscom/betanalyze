@@ -23,31 +23,18 @@ Open [http://localhost:3000](http://localhost:3000).
 
 A candidate is treated as the winner when their **latest** displayed market price is **above $0.90**.
 
-## Built-in strategies
+## Analyses
 
-| Strategy | Rule |
-| --- | --- |
-| Early Mover | Pick the candidate with the highest opening price |
-| First Crossover | Pick the first candidate to overtake the market leader |
-| Latest Crossover (2 weeks) | Pick the most recent leader change in the final 14 days |
-| 5-Day MA Momentum | Pick the first candidate above $0.20 with 3 consecutive daily increases in a 5-day moving average |
+### Period wise Performance
 
-## Add a new strategy
+Compare 7, 14, or 21-day windows before market close:
 
-Create a new strategy in `src/lib/strategies/` using the `Strategy` interface:
+- Who was in the top position on the check date?
+- Where did they finish at close?
+- How did winner vs non-winner prices evolve during the window?
+- Price bracket distribution at the check date
 
-```ts
-export const myStrategy: Strategy = {
-  id: "my-strategy",
-  name: "My Strategy",
-  description: "What this strategy does",
-  run(bet, outcomes) {
-    // return StrategyResult
-  },
-};
-```
-
-Register it in `src/lib/strategies/index.ts`.
+Open `/analyze/period-performance?days=14` (or `days=7`, `days=21`).
 
 ## Deploy to Vercel
 

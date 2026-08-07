@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriceChart } from "@/components/price-chart";
-import { StrategyResultsTable } from "@/components/strategy-results-table";
-import { runStrategyOnBet } from "@/lib/backtest/run-backtest";
 import { computeBetOutcomes } from "@/lib/engine/outcomes";
 import { loadBetById } from "@/lib/parser/load-bets";
-import { allStrategies } from "@/lib/strategies";
 import { formatDate, formatPlace, formatPrice } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +20,6 @@ export default async function BetPage({ params }: BetPageProps) {
   }
 
   const outcomes = computeBetOutcomes(bet);
-  const strategyResults = allStrategies.map((strategy) =>
-    runStrategyOnBet(strategy, bet),
-  );
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
@@ -91,11 +85,6 @@ export default async function BetPage({ params }: BetPageProps) {
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900">Strategy signals</h2>
-        <StrategyResultsTable results={strategyResults} />
       </section>
     </main>
   );
