@@ -27,12 +27,13 @@ export interface PeriodChartPoint {
   [candidate: string]: string | number | null | undefined;
 }
 
-export interface PriceBracketBucket {
+export interface PriceBracketWinRate {
   label: string;
   min: number;
   max: number;
-  winners: number;
-  nonWinners: number;
+  total: number;
+  becameWinner: number;
+  winRate: number;
 }
 
 export interface PeriodAggregateResult {
@@ -43,9 +44,7 @@ export interface PeriodAggregateResult {
   winRate: number;
   avgFinalPlace: number | null;
   placeDistribution: Record<number, number>;
-  winnerPricesAtCheck: number[];
-  nonWinnerPricesAtCheck: number[];
-  priceBrackets: PriceBracketBucket[];
+  leaderPriceWinRates: PriceBracketWinRate[];
   aggregateEvolution: { dayOffset: number; winnerAvg: number; otherAvg: number }[];
   betResults: PeriodBetResult[];
 }

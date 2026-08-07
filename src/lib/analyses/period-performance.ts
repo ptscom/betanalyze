@@ -7,7 +7,7 @@ import type {
   PeriodBetResult,
   PeriodChartPoint,
   PeriodDays,
-  PriceBracketBucket,
+  PriceBracketWinRate,
 } from "@/lib/analyses/types";
 
 const PRICE_BRACKETS = [
@@ -147,19 +147,27 @@ export function analyzeBetPeriod(
   };
 }
 
-function buildPriceBrackets(
-  winnerPrices: number[],
-  nonWinnerPrices: number[],
-): PriceBracketBucket[] {
-  return PRICE_BRACKETS.map((bracket) => ({
-    ...bracket,
-    winners: winnerPrices.filter(
-      (price) => price >= bracket.min && price < bracket.max,
-    ).length,
-    nonWinners: nonWinnerPrices.filter(
-      (price) => price >= bracket.min && price < bracket.max,
-    ).length,
-  }));
+function buildLeaderPriceWinRates(
+  eligible: PeriodBetResult[],
+): PriceBracketWinRate[] {
+  return PRICE_BRACKETS.map((bracket) => {
+    const inBracket = eligible.filter(
+      (result) =>
+        result.leaderPriceAtCheck != null &&
+        result.leaderPriceAtCheck >= bracket.min &&
+        result.leaderPriceAtCheck < bracket.max,
+    );
+    const becameWinner = inBracket.filter((result) => result.leaderWon).length;
+
+    return {
+      label: bracket.label,
+      min: bracket.min,
+      max: bracket.max,
+      total: inBracket.length,
+      becameWinner,
+      winRate: inBracket.length > 0 ? becameWinner / inBracket.length : 0,
+    };
+  });
 }
 
 function buildAggregateEvolution(
@@ -220,33 +228,6 @@ export function analyzePeriodPerformance(
     placeDistribution[place] = (placeDistribution[place] ?? 0) + 1;
   }
 
-  const winnerPricesAtCheck: number[] = [];
-  const nonWinnerPricesAtCheck: number[] = [];
-
-  for (const result of eligible) {
-    if (!result.periodChartData.length || result.winnerNames.length === 0) {
-      continue;
-    }
-
-    const firstPoint = result.periodChartData[0];
-    for (const winner of result.winnerNames) {
-      const price = firstPoint[winner];
-      if (typeof price === "number") {
-        winnerPricesAtCheck.push(price);
-      }
-    }
-
-    for (const [name, price] of Object.entries(firstPoint)) {
-      if (
-        typeof price === "number" &&
-        !result.winnerNames.includes(name) &&
-        !["dayOffset", "winnerAvgPrice", "otherAvgPrice"].includes(name)
-      ) {
-        nonWinnerPricesAtCheck.push(price);
-      }
-    }
-  }
-
   return {
     periodDays,
     totalBets: bets.length,
@@ -258,12 +239,7 @@ export function analyzePeriodPerformance(
         ? finalPlaces.reduce((sum, place) => sum + place, 0) / finalPlaces.length
         : null,
     placeDistribution,
-    winnerPricesAtCheck,
-    nonWinnerPricesAtCheck,
-    priceBrackets: buildPriceBrackets(
-      winnerPricesAtCheck,
-      nonWinnerPricesAtCheck,
-    ),
+    leaderPriceWinRates: buildLeaderPriceWinRates(eligible),
     aggregateEvolution: buildAggregateEvolution(betResults, periodDays),
     betResults,
   };

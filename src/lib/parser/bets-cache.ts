@@ -49,9 +49,7 @@ export interface SerializedPeriodAggregateResult {
   winRate: number;
   avgFinalPlace: number | null;
   placeDistribution: Record<number, number>;
-  winnerPricesAtCheck: number[];
-  nonWinnerPricesAtCheck: number[];
-  priceBrackets: PeriodAggregateResult["priceBrackets"];
+  leaderPriceWinRates: PeriodAggregateResult["leaderPriceWinRates"];
   aggregateEvolution: PeriodAggregateResult["aggregateEvolution"];
   betResults: SerializedPeriodBetResult[];
 }
@@ -113,9 +111,7 @@ export function serializePeriodAnalysis(
     winRate: analysis.winRate,
     avgFinalPlace: analysis.avgFinalPlace,
     placeDistribution: analysis.placeDistribution,
-    winnerPricesAtCheck: analysis.winnerPricesAtCheck,
-    nonWinnerPricesAtCheck: analysis.nonWinnerPricesAtCheck,
-    priceBrackets: analysis.priceBrackets,
+    leaderPriceWinRates: analysis.leaderPriceWinRates,
     aggregateEvolution: analysis.aggregateEvolution,
     betResults: analysis.betResults.map((result) => ({
       betId: result.betId,

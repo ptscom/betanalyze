@@ -32,11 +32,9 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
     }))
     .sort((a, b) => a.place - b.place);
 
-  const bracketChartData = analysis.priceBrackets.map((bucket) => ({
-    bracket: bucket.label,
-    Winners: bucket.winners,
-    Others: bucket.nonWinners,
-  }));
+  const bracketRows = analysis.leaderPriceWinRates.filter(
+    (row) => row.total > 0,
+  );
 
   const evolutionData = analysis.aggregateEvolution.map((point) => ({
     day: `Day ${point.dayOffset}`,
@@ -103,30 +101,62 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
           </div>
         </ChartCard>
 
-        <ChartCard
-          title="Price bracket at check date"
-          description="Where were candidates priced on the check date? Compare eventual winners vs others."
-        >
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bracketChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="bracket"
-                  tick={{ fontSize: 10 }}
-                  angle={-25}
-                  textAnchor="end"
-                  height={70}
-                />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="Winners" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Others" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h3 className="text-lg font-semibold text-zinc-900">
+            Leader price at period start vs win rate
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600">
+            The period leader&apos;s price at day 0 ({analysis.periodDays} days
+            before close) and how often they went on to win at close.
+          </p>
+          <div className="mt-4 overflow-hidden rounded-lg border border-zinc-200">
+            <table className="min-w-full divide-y divide-zinc-200 text-sm">
+              <thead className="bg-zinc-50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Price at period start
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Bets
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Became winner
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Win rate
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {bracketRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-6 text-center text-zinc-500"
+                    >
+                      No data for this period window.
+                    </td>
+                  </tr>
+                ) : (
+                  bracketRows.map((row) => (
+                    <tr key={row.label} className="hover:bg-zinc-50">
+                      <td className="px-4 py-3 font-medium text-zinc-900">
+                        {row.label}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">{row.total}</td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {row.becameWinner}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-zinc-900">
+                        {formatPercent(row.winRate)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </ChartCard>
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -163,8 +193,8 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
               above $0.90).
             </li>
             <li>
-              &quot;Leader became winner&quot; means the check-date leader also
-              had the highest price at close.
+              The win-rate table shows: if the leader was priced $0.80–$0.90 at
+              the start of the window, how often did they still win at close?
             </li>
           </ul>
         </div>
