@@ -105,3 +105,45 @@ export interface PeriodAggregateResult {
   aggregateEvolution: { dayOffset: number; winnerAvg: number; otherAvg: number }[];
   betResults: PeriodBetResult[];
 }
+
+export type JumpThreshold = 0.1 | 0.25 | 0.5;
+
+export const JUMP_THRESHOLD_OPTIONS: JumpThreshold[] = [0.1, 0.25, 0.5];
+
+export function jumpCacheKey(
+  periodDays: PeriodDays,
+  threshold: JumpThreshold,
+): string {
+  return `${periodDays}-${threshold}`;
+}
+
+export interface SingleDayJumpBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  threshold: JumpThreshold;
+  hasEnoughHistory: boolean;
+  hasJump: boolean;
+  jumpCandidate: string | null;
+  jumpAt: Date | null;
+  priceBefore: number | null;
+  priceAfter: number | null;
+  jumpPct: number | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SingleDayJumpAggregateResult {
+  periodDays: PeriodDays;
+  threshold: JumpThreshold;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: PriceBracketWinRate[];
+  betResults: SingleDayJumpBetResult[];
+}

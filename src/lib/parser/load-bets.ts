@@ -6,13 +6,17 @@ import type {
   PeriodAggregateResult,
   PeriodDays,
   RiseInMaAggregateResult,
+  SingleDayJumpAggregateResult,
+  JumpThreshold,
 } from "@/lib/analyses/types";
+import { jumpCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
   deserializeFirstCrossoverAnalysis,
   deserializePeriodAnalysis,
   deserializeRiseInMaAnalysis,
+  deserializeSingleDayJumpAnalysis,
   getCacheFilePath,
 } from "@/lib/parser/bets-cache";
 import { parseWorkbookBuffer } from "@/lib/parser/parse-bet-file";
@@ -54,6 +58,7 @@ interface LoadedBetsData {
   periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
   firstCrossover: Map<PeriodDays, FirstCrossoverAggregateResult>;
   riseInMa: Map<PeriodDays, RiseInMaAggregateResult>;
+  singleDayJump: Map<string, SingleDayJumpAggregateResult>;
 }
 
 let memoryCache: LoadedBetsData | null = null;
@@ -109,12 +114,18 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     );
   }
 
+  const singleDayJump = new Map<string, SingleDayJumpAggregateResult>();
+  for (const [key, analysis] of Object.entries(raw.singleDayJump ?? {})) {
+    singleDayJump.set(key, deserializeSingleDayJumpAnalysis(analysis));
+  }
+
   return {
     bets: raw.bets.map(deserializeBet).sort((a, b) => a.name.localeCompare(b.name)),
     failures: raw.failures,
     periodPerformance,
     firstCrossover,
     riseInMa,
+    singleDayJump,
   };
 }
 
@@ -137,6 +148,7 @@ function ensureCacheLoaded(): LoadedBetsData {
     periodPerformance: new Map(),
     firstCrossover: new Map(),
     riseInMa: new Map(),
+    singleDayJump: new Map(),
   };
 
   return memoryCache;
@@ -209,6 +221,14 @@ export function getCachedRiseInMa(
 ): RiseInMaAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.riseInMa.get(periodDays) ?? null;
+}
+
+export function getCachedSingleDayJump(
+  periodDays: PeriodDays,
+  threshold: JumpThreshold,
+): SingleDayJumpAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.singleDayJump.get(jumpCacheKey(periodDays, threshold)) ?? null;
 }
 
 export function clearBetsMemoryCache(): void {

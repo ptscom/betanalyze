@@ -6,7 +6,10 @@ import type {
   PeriodAggregateResult,
   PeriodDays,
   RiseInMaAggregateResult,
+  SingleDayJumpAggregateResult,
+  JumpThreshold,
 } from "@/lib/analyses/types";
+import { jumpCacheKey } from "@/lib/analyses/types";
 
 export interface SerializedPricePoint {
   loggedAt: string;
@@ -44,6 +47,37 @@ export interface SerializedPeriodBetResult {
   leaderWon: boolean;
   actualWinner: string | null;
   winnerNames: string[];
+}
+
+export interface SerializedSingleDayJumpBetResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: PeriodDays;
+  threshold: JumpThreshold;
+  hasEnoughHistory: boolean;
+  hasJump: boolean;
+  jumpCandidate: string | null;
+  jumpAt: string | null;
+  priceBefore: number | null;
+  priceAfter: number | null;
+  jumpPct: number | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedSingleDayJumpAggregateResult {
+  periodDays: PeriodDays;
+  threshold: JumpThreshold;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: SingleDayJumpAggregateResult["pickPriceWinRates"];
+  betResults: SerializedSingleDayJumpBetResult[];
 }
 
 export interface SerializedRiseInMaBetResult {
@@ -124,6 +158,7 @@ export interface BetsCacheFile {
   periodPerformance: Record<string, SerializedPeriodAggregateResult>;
   firstCrossover: Record<string, SerializedFirstCrossoverAggregateResult>;
   riseInMa: Record<string, SerializedRiseInMaAggregateResult>;
+  singleDayJump: Record<string, SerializedSingleDayJumpAggregateResult>;
 }
 
 export function getCacheFilePath(): string {
@@ -161,6 +196,53 @@ export function deserializeBet(bet: SerializedBetMarket): BetMarket {
     })),
     startDate: new Date(bet.startDate),
     endDate: new Date(bet.endDate),
+  };
+}
+
+export function serializeSingleDayJumpAnalysis(
+  analysis: SingleDayJumpAggregateResult,
+): SerializedSingleDayJumpAggregateResult {
+  return {
+    periodDays: analysis.periodDays,
+    threshold: analysis.threshold,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    picksWhoWon: analysis.picksWhoWon,
+    winRate: analysis.winRate,
+    placeDistribution: analysis.placeDistribution,
+    pickPriceWinRates: analysis.pickPriceWinRates,
+    betResults: analysis.betResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      threshold: result.threshold,
+      hasEnoughHistory: result.hasEnoughHistory,
+      hasJump: result.hasJump,
+      jumpCandidate: result.jumpCandidate,
+      jumpAt: result.jumpAt?.toISOString() ?? null,
+      priceBefore: result.priceBefore,
+      priceAfter: result.priceAfter,
+      jumpPct: result.jumpPct,
+      pickFinalPlace: result.pickFinalPlace,
+      pickWon: result.pickWon,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeSingleDayJumpAnalysis(
+  analysis: SerializedSingleDayJumpAggregateResult,
+): SingleDayJumpAggregateResult {
+  return {
+    ...analysis,
+    betResults: analysis.betResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      jumpAt: result.jumpAt ? new Date(result.jumpAt) : null,
+    })),
   };
 }
 
