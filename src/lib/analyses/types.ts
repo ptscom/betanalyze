@@ -93,6 +93,49 @@ export interface RiseInMaAggregateResult {
   betResults: RiseInMaBetResult[];
 }
 
+export type ReversalThreshold = 0.8 | 0.9;
+
+export const THRESHOLD_OPTIONS: ReversalThreshold[] = [0.8, 0.9];
+
+export function reversalCacheKey(
+  periodDays: PeriodDays,
+  threshold: ReversalThreshold,
+): string {
+  return `${periodDays}-${threshold}`;
+}
+
+export interface ReversalOccurrenceBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  threshold: ReversalThreshold;
+  hasEnoughHistory: boolean;
+  hasHit: boolean;
+  hitCandidate: string | null;
+  hitPrice: number | null;
+  hitAt: Date | null;
+  reversed: boolean;
+  pickFinalPlace: number | null;
+  heldOn: boolean;
+  actualWinner: string | null;
+}
+
+export interface ReversalOccurrenceAggregateResult {
+  periodDays: PeriodDays;
+  threshold: ReversalThreshold;
+  totalBets: number;
+  eligibleBets: number;
+  reversals: number;
+  reversalRate: number;
+  heldOnCount: number;
+  holdRate: number;
+  placeDistribution: Record<number, number>;
+  hitPriceOutcomes: PriceBracketWinRate[];
+  betResults: ReversalOccurrenceBetResult[];
+}
+
 export interface PeriodAggregateResult {
   periodDays: PeriodDays;
   totalBets: number;

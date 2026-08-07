@@ -88,6 +88,18 @@ export default function HomePage() {
               average in the window — track win rate by signal price.
             </p>
           </Link>
+          <Link
+            href="/analyze/reversal-occurrence?days=14&threshold=0.8"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Reversal Occurrence
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First time a candidate hits above $0.80 or $0.90 in the window —
+              track how often they reversed vs held on to win.
+            </p>
+          </Link>
         </div>
       </section>
 

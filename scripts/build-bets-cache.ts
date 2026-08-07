@@ -2,14 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
+import { analyzeReversalOccurrence } from "@/lib/analyses/reversal-occurrence";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
-import { PERIOD_OPTIONS } from "@/lib/analyses/types";
+import { PERIOD_OPTIONS, THRESHOLD_OPTIONS, reversalCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   getCacheFilePath,
   serializeBet,
   serializeFirstCrossoverAnalysis,
   serializePeriodAnalysis,
+  serializeReversalOccurrenceAnalysis,
   serializeRiseInMaAnalysis,
 } from "@/lib/parser/bets-cache";
 import { loadAllBetsFromExcel } from "@/lib/parser/load-bets";
@@ -22,6 +24,7 @@ export function buildBetsCache(): BetsCacheFile {
   const periodPerformance: BetsCacheFile["periodPerformance"] = {};
   const firstCrossover: BetsCacheFile["firstCrossover"] = {};
   const riseInMa: BetsCacheFile["riseInMa"] = {};
+  const reversalOccurrence: BetsCacheFile["reversalOccurrence"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
     periodPerformance[String(days)] = serializePeriodAnalysis(
@@ -35,6 +38,15 @@ export function buildBetsCache(): BetsCacheFile {
     riseInMa[String(days)] = serializeRiseInMaAnalysis(
       analyzeRiseInMa(bets, days),
     );
+    for (const threshold of THRESHOLD_OPTIONS) {
+      console.log(
+        `  Precomputing ${days}-day reversal occurrence (>${threshold})...`,
+      );
+      reversalOccurrence[reversalCacheKey(days, threshold)] =
+        serializeReversalOccurrenceAnalysis(
+          analyzeReversalOccurrence(bets, days, threshold),
+        );
+    }
   }
 
   const cache: BetsCacheFile = {
@@ -45,6 +57,7 @@ export function buildBetsCache(): BetsCacheFile {
     periodPerformance,
     firstCrossover,
     riseInMa,
+    reversalOccurrence,
   };
 
   const outputPath = getCacheFilePath();

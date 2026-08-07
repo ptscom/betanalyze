@@ -5,13 +5,17 @@ import type {
   FirstCrossoverAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
+  ReversalOccurrenceAggregateResult,
   RiseInMaAggregateResult,
+  ReversalThreshold,
 } from "@/lib/analyses/types";
+import { reversalCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
   deserializeFirstCrossoverAnalysis,
   deserializePeriodAnalysis,
+  deserializeReversalOccurrenceAnalysis,
   deserializeRiseInMaAnalysis,
   getCacheFilePath,
 } from "@/lib/parser/bets-cache";
@@ -54,6 +58,7 @@ interface LoadedBetsData {
   periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
   firstCrossover: Map<PeriodDays, FirstCrossoverAggregateResult>;
   riseInMa: Map<PeriodDays, RiseInMaAggregateResult>;
+  reversalOccurrence: Map<string, ReversalOccurrenceAggregateResult>;
 }
 
 let memoryCache: LoadedBetsData | null = null;
@@ -109,12 +114,18 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     );
   }
 
+  const reversalOccurrence = new Map<string, ReversalOccurrenceAggregateResult>();
+  for (const [key, analysis] of Object.entries(raw.reversalOccurrence ?? {})) {
+    reversalOccurrence.set(key, deserializeReversalOccurrenceAnalysis(analysis));
+  }
+
   return {
     bets: raw.bets.map(deserializeBet).sort((a, b) => a.name.localeCompare(b.name)),
     failures: raw.failures,
     periodPerformance,
     firstCrossover,
     riseInMa,
+    reversalOccurrence,
   };
 }
 
@@ -137,6 +148,7 @@ function ensureCacheLoaded(): LoadedBetsData {
     periodPerformance: new Map(),
     firstCrossover: new Map(),
     riseInMa: new Map(),
+    reversalOccurrence: new Map(),
   };
 
   return memoryCache;
@@ -209,6 +221,14 @@ export function getCachedRiseInMa(
 ): RiseInMaAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.riseInMa.get(periodDays) ?? null;
+}
+
+export function getCachedReversalOccurrence(
+  periodDays: PeriodDays,
+  threshold: ReversalThreshold,
+): ReversalOccurrenceAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.reversalOccurrence.get(reversalCacheKey(periodDays, threshold)) ?? null;
 }
 
 export function clearBetsMemoryCache(): void {
