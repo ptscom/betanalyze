@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
+import type { PeriodAggregateResult, PeriodDays } from "@/lib/analyses/types";
+import {
+  type BetsCacheFile,
+  deserializeBet,
+  deserializePeriodAnalysis,
+  getCacheFilePath,
+} from "@/lib/parser/bets-cache";
 import { parseWorkbookBuffer } from "@/lib/parser/parse-bet-file";
 
 const SUPPORTED_EXTENSIONS = new Set([".xlsx", ".xls", ".csv"]);
@@ -34,6 +41,78 @@ export interface FailedBet {
 
 export type BetLoadResult = LoadedBet | FailedBet;
 
+interface LoadedBetsData {
+  bets: BetMarket[];
+  failures: FailedBet[];
+  periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
+}
+
+let memoryCache: LoadedBetsData | null = null;
+
+function isCacheStale(cachePath: string): boolean {
+  if (!fs.existsSync(cachePath)) return true;
+
+  const betsDir = getBetsDirectory();
+  if (!fs.existsSync(betsDir)) return false;
+
+  const cacheMtime = fs.statSync(cachePath).mtimeMs;
+  const entries = fs.readdirSync(betsDir);
+
+  for (const filename of entries) {
+    if (!SUPPORTED_EXTENSIONS.has(path.extname(filename).toLowerCase())) {
+      continue;
+    }
+    const fileMtime = fs.statSync(path.join(betsDir, filename)).mtimeMs;
+    if (fileMtime > cacheMtime) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function loadFromCacheFile(cachePath: string): LoadedBetsData {
+  const raw = JSON.parse(
+    fs.readFileSync(cachePath, "utf8"),
+  ) as BetsCacheFile;
+
+  const periodPerformance = new Map<PeriodDays, PeriodAggregateResult>();
+  for (const [days, analysis] of Object.entries(raw.periodPerformance)) {
+    periodPerformance.set(
+      Number(days) as PeriodDays,
+      deserializePeriodAnalysis(analysis),
+    );
+  }
+
+  return {
+    bets: raw.bets.map(deserializeBet).sort((a, b) => a.name.localeCompare(b.name)),
+    failures: raw.failures,
+    periodPerformance,
+  };
+}
+
+function ensureCacheLoaded(): LoadedBetsData {
+  if (memoryCache) {
+    return memoryCache;
+  }
+
+  const cachePath = getCacheFilePath();
+
+  if (!isCacheStale(cachePath)) {
+    memoryCache = loadFromCacheFile(cachePath);
+    return memoryCache;
+  }
+
+  const { bets, failures } = loadAllBetsFromExcel();
+  memoryCache = {
+    bets,
+    failures,
+    periodPerformance: new Map(),
+  };
+
+  return memoryCache;
+}
+
 export function loadBetFromFilename(filename: string): BetLoadResult {
   const filePath = path.join(getBetsDirectory(), filename);
 
@@ -48,7 +127,7 @@ export function loadBetFromFilename(filename: string): BetLoadResult {
   }
 }
 
-export function loadAllBets(): {
+export function loadAllBetsFromExcel(): {
   bets: BetMarket[];
   failures: FailedBet[];
 } {
@@ -69,14 +148,26 @@ export function loadAllBets(): {
   return { bets, failures };
 }
 
+export function loadAllBets(): {
+  bets: BetMarket[];
+  failures: FailedBet[];
+} {
+  const data = ensureCacheLoaded();
+  return { bets: data.bets, failures: data.failures };
+}
+
 export function loadBetById(betId: string): BetMarket | null {
-  const filenames = listBetFilenames();
-  const match = filenames.find(
-    (filename) => filename.replace(/\.(xlsx|xls|csv)$/i, "") === betId,
-  );
+  const { bets } = loadAllBets();
+  return bets.find((bet) => bet.id === betId) ?? null;
+}
 
-  if (!match) return null;
+export function getCachedPeriodPerformance(
+  periodDays: PeriodDays,
+): PeriodAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.periodPerformance.get(periodDays) ?? null;
+}
 
-  const result = loadBetFromFilename(match);
-  return "bet" in result && result.bet ? result.bet : null;
+export function clearBetsMemoryCache(): void {
+  memoryCache = null;
 }

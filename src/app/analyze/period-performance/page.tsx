@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { PeriodPerformanceView } from "@/components/period-performance-view";
 import { AnalysisNav, PeriodSelector } from "@/components/analysis-nav";
-import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
+import { getPeriodPerformanceAnalysis } from "@/lib/analyses/get-period-performance";
 import type { PeriodDays } from "@/lib/analyses/types";
 import { loadAllBets } from "@/lib/parser/load-bets";
 
@@ -24,8 +24,8 @@ export default async function PeriodPerformancePage({
 }: PeriodPerformancePageProps) {
   const params = await searchParams;
   const periodDays = parsePeriodDays(params.days);
-  const { bets, failures } = loadAllBets();
-  const analysis = analyzePeriodPerformance(bets, periodDays);
+  const { failures } = loadAllBets();
+  const analysis = getPeriodPerformanceAnalysis(periodDays);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">

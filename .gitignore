@@ -20,6 +20,9 @@
 # production
 /build
 
+# generated bet cache (rebuilt via npm run build:data)
+/data/bets-cache.json
+
 # misc
 .DS_Store
 *.pem

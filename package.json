@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build:data": "tsx scripts/build-bets-cache.ts",
+    "build": "npm run build:data && next build",
     "start": "next start",
     "lint": "eslint",
     "generate:sample-data": "tsx scripts/generate-sample-data.ts"

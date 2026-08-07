@@ -6,11 +6,13 @@ Backtesting dashboard for prediction market Excel exports. Deploy on Vercel, dro
 
 ```bash
 npm install
-npm run generate:sample-data
+npm run build:data    # parse Excel files once into a fast JSON cache
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+After adding or changing Excel files in `data/bets/`, rerun `npm run build:data`.
 
 ## Add your data
 
@@ -36,7 +38,13 @@ Compare 7, 14, or 21-day windows before market close:
 
 Open `/analyze/period-performance?days=14` (or `days=7`, `days=21`).
 
-## Deploy to Vercel
+## Performance
+
+Excel files are parsed once into `data/bets-cache.json` via `npm run build:data`. This
+cache includes precomputed period-performance results for 7, 14, and 21-day windows.
+At runtime the app loads a single JSON file (~5 MB for 150+ bets) instead of parsing
+every Excel file on each request. Vercel builds run `build:data` automatically before
+`next build`.
 
 1. Import the repo in Vercel (default Next.js settings)
 2. Set **Production Branch** to `main`
