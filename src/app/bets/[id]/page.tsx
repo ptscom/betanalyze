@@ -8,6 +8,8 @@ import { loadBetById } from "@/lib/parser/load-bets";
 import { allStrategies } from "@/lib/strategies";
 import { formatDate, formatPlace, formatPrice } from "@/lib/utils/format";
 
+export const dynamic = "force-dynamic";
+
 interface BetPageProps {
   params: Promise<{ id: string }>;
 }

@@ -7,6 +7,8 @@ import { loadAllBets } from "@/lib/parser/load-bets";
 import { allStrategies } from "@/lib/strategies";
 import { sortSummariesByWinRate } from "@/lib/utils/format";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   const { bets, failures } = loadAllBets();
   const { summaries, resultsByStrategy } = runFullBacktest(bets);

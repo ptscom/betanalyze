@@ -51,12 +51,23 @@ Register it in `src/lib/strategies/index.ts`.
 
 ## Deploy to Vercel
 
-1. Push this repo to GitHub
-2. Import the project in Vercel
-3. Use the default Next.js settings
-4. Commit your Excel files under `data/bets/` before deploying
+1. Import the repo in Vercel (default Next.js settings)
+2. Set **Production Branch** to `main`
+3. Add your Excel files under `data/bets/` before deploying
+4. Under **Settings → Deployment Protection**, either sign in to view previews or disable protection for Production if you want a public URL
+5. Under **Settings → Domains**, confirm `betanalyze.vercel.app` (or your project name) is assigned to Production
 
-The app reads bet files at build/runtime on the server, so no database is required.
+The app reads bet files at runtime on the server, so no database is required.
+
+### Troubleshooting 404 on Vercel
+
+If you see `404: NOT_FOUND` with `x-vercel-error: NOT_FOUND`:
+
+- The domain has no production deployment yet. Open the Vercel project → **Deployments** → promote the latest successful `main` deploy to **Production**
+- Or you may be using the wrong URL. Check the deployment URL in the Vercel dashboard
+- Preview URLs on team accounts may require Vercel login (Deployment Protection)
+
+Test the deployment with `/api/health` — it should return `{"status":"ok"}`.
 
 ## Project structure
 

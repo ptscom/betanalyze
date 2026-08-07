@@ -5,6 +5,8 @@ import { runFullBacktest } from "@/lib/backtest/run-backtest";
 import { loadAllBets } from "@/lib/parser/load-bets";
 import { allStrategies } from "@/lib/strategies";
 
+export const dynamic = "force-dynamic";
+
 export default function StrategiesPage() {
   const { bets } = loadAllBets();
   const { summaries, resultsByStrategy } = runFullBacktest(bets);
