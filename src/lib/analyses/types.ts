@@ -105,3 +105,39 @@ export interface PeriodAggregateResult {
   aggregateEvolution: { dayOffset: number; winnerAvg: number; otherAvg: number }[];
   betResults: PeriodBetResult[];
 }
+
+export type ReversalPeriodDays = 7 | 14 | 21 | 28;
+
+export const REVERSAL_PERIOD_OPTIONS: ReversalPeriodDays[] = [7, 14, 21, 28];
+
+export const REVERSAL_THRESHOLD = 0.9;
+
+export interface ReversalCandidateResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: ReversalPeriodDays;
+  candidate: string;
+  firstHitAt: Date;
+  peakPriceInWindow: number;
+  finalPlace: number | null;
+  reversed: boolean;
+  heldOn: boolean;
+  actualWinner: string | null;
+}
+
+export interface ReversalAggregateResult {
+  periodDays: ReversalPeriodDays;
+  threshold: typeof REVERSAL_THRESHOLD;
+  totalBets: number;
+  betsWithHits: number;
+  eligibleCandidates: number;
+  reversals: number;
+  reversalRate: number;
+  heldOnCount: number;
+  holdRate: number;
+  placeDistribution: Record<number, number>;
+  peakPriceOutcomes: PriceBracketWinRate[];
+  candidateResults: ReversalCandidateResult[];
+}

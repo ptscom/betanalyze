@@ -88,6 +88,18 @@ export default function HomePage() {
               average in the window — track win rate by signal price.
             </p>
           </Link>
+          <Link
+            href="/analyze/reversal?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Reversal
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              Of all candidates who reach $0.90+ in the 7/14/21/28-day window,
+              what percentage end up as losers at close?
+            </p>
+          </Link>
         </div>
       </section>
 

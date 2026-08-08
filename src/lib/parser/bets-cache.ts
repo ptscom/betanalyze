@@ -5,6 +5,7 @@ import type {
   FirstCrossoverAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
+  ReversalAggregateResult,
   RiseInMaAggregateResult,
 } from "@/lib/analyses/types";
 
@@ -44,6 +45,36 @@ export interface SerializedPeriodBetResult {
   leaderWon: boolean;
   actualWinner: string | null;
   winnerNames: string[];
+}
+
+export interface SerializedReversalCandidateResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: ReversalAggregateResult["periodDays"];
+  candidate: string;
+  firstHitAt: string;
+  peakPriceInWindow: number;
+  finalPlace: number | null;
+  reversed: boolean;
+  heldOn: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedReversalAggregateResult {
+  periodDays: ReversalAggregateResult["periodDays"];
+  threshold: ReversalAggregateResult["threshold"];
+  totalBets: number;
+  betsWithHits: number;
+  eligibleCandidates: number;
+  reversals: number;
+  reversalRate: number;
+  heldOnCount: number;
+  holdRate: number;
+  placeDistribution: Record<number, number>;
+  peakPriceOutcomes: ReversalAggregateResult["peakPriceOutcomes"];
+  candidateResults: SerializedReversalCandidateResult[];
 }
 
 export interface SerializedRiseInMaBetResult {
@@ -124,6 +155,7 @@ export interface BetsCacheFile {
   periodPerformance: Record<string, SerializedPeriodAggregateResult>;
   firstCrossover: Record<string, SerializedFirstCrossoverAggregateResult>;
   riseInMa: Record<string, SerializedRiseInMaAggregateResult>;
+  reversal: Record<string, SerializedReversalAggregateResult>;
 }
 
 export function getCacheFilePath(): string {
@@ -161,6 +193,52 @@ export function deserializeBet(bet: SerializedBetMarket): BetMarket {
     })),
     startDate: new Date(bet.startDate),
     endDate: new Date(bet.endDate),
+  };
+}
+
+export function serializeReversalAnalysis(
+  analysis: ReversalAggregateResult,
+): SerializedReversalAggregateResult {
+  return {
+    periodDays: analysis.periodDays,
+    threshold: analysis.threshold,
+    totalBets: analysis.totalBets,
+    betsWithHits: analysis.betsWithHits,
+    eligibleCandidates: analysis.eligibleCandidates,
+    reversals: analysis.reversals,
+    reversalRate: analysis.reversalRate,
+    heldOnCount: analysis.heldOnCount,
+    holdRate: analysis.holdRate,
+    placeDistribution: analysis.placeDistribution,
+    peakPriceOutcomes: analysis.peakPriceOutcomes,
+    candidateResults: analysis.candidateResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      candidate: result.candidate,
+      firstHitAt: result.firstHitAt.toISOString(),
+      peakPriceInWindow: result.peakPriceInWindow,
+      finalPlace: result.finalPlace,
+      reversed: result.reversed,
+      heldOn: result.heldOn,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeReversalAnalysis(
+  analysis: SerializedReversalAggregateResult,
+): ReversalAggregateResult {
+  return {
+    ...analysis,
+    candidateResults: analysis.candidateResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      firstHitAt: new Date(result.firstHitAt),
+    })),
   };
 }
 
