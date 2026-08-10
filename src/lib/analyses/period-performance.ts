@@ -197,7 +197,10 @@ export function analyzeBetPeriod(
           closeDate,
         )
       : [];
-  const dipSlabsTouched = getSlabsTouchedWhileFalling(leaderDailyPrices);
+  const dipSlabsTouched =
+    hasEnoughHistory && leader
+      ? getSlabsTouchedWhileFalling(leaderDailyPrices, leader.price)
+      : [];
   const leaderMinPriceInWindow =
     leaderDailyPrices.length > 0
       ? Math.min(...leaderDailyPrices)

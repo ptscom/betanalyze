@@ -32,14 +32,33 @@ export function getSlabsInPriceRange(
   ).map((bracket) => bracket.label);
 }
 
-export function getSlabsTouchedWhileFalling(dailyPrices: number[]): string[] {
+export function getPriceBracketIndex(price: number): number {
+  return PRICE_BRACKETS.findIndex(
+    (bracket) => price >= bracket.min && price < bracket.max,
+  );
+}
+
+export function getSlabsTouchedWhileFalling(
+  dailyPrices: number[],
+  startPrice: number,
+): string[] {
   if (dailyPrices.length === 0) {
     return [];
   }
 
+  const startSlabIndex = getPriceBracketIndex(startPrice);
+  if (startSlabIndex === -1) {
+    return [];
+  }
+
+  const isDipSlab = (label: string): boolean => {
+    const index = PRICE_BRACKETS.findIndex((bracket) => bracket.label === label);
+    return index !== -1 && index <= startSlabIndex;
+  };
+
   const touched = new Set<string>();
-  const startLabel = getPriceBracketLabel(dailyPrices[0]);
-  if (startLabel) {
+  const startLabel = getPriceBracketLabel(startPrice);
+  if (startLabel && isDipSlab(startLabel)) {
     touched.add(startLabel);
   }
 
@@ -48,7 +67,9 @@ export function getSlabsTouchedWhileFalling(dailyPrices: number[]): string[] {
     const currentPrice = dailyPrices[index];
     if (currentPrice < previousPrice) {
       for (const label of getSlabsInPriceRange(currentPrice, previousPrice)) {
-        touched.add(label);
+        if (isDipSlab(label)) {
+          touched.add(label);
+        }
       }
     }
     previousPrice = currentPrice;
