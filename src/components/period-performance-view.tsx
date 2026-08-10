@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DipWinRateSection } from "@/components/dip-win-rate-section";
 import type { PeriodAggregateResult } from "@/lib/analyses/types";
 import { formatPercent, formatPlace, formatPrice } from "@/lib/utils/format";
 
@@ -159,6 +160,13 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
         </div>
       </section>
 
+      <DipWinRateSection
+        dipSlabWinRates={analysis.dipSlabWinRates}
+        startSlabSelectorLabel="Leader started at:"
+        countLabel="Bets"
+        description="If the period leader started in a price slab and their price fell through lower slabs (daily closes, on down days only), what is the chance they still won at close? Only slabs at or below the period-start price count as dips."
+      />
+
       <section className="grid gap-6 lg:grid-cols-2">
         <ChartCard
           title="Where period leaders finished"
@@ -222,6 +230,12 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
                     Price at check
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Dip slabs touched
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Min in window
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Final place
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
@@ -244,6 +258,14 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
                     <td className="px-4 py-3 text-zinc-700">
                       {result.leaderPriceAtCheck != null
                         ? formatPrice(result.leaderPriceAtCheck)
+                        : "—"}
+                    </td>
+                    <td className="max-w-xs px-4 py-3 text-xs text-zinc-700">
+                      {result.dipSlabsTouched.join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {result.leaderMinPriceInWindow != null
+                        ? formatPrice(result.leaderMinPriceInWindow)
                         : "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">

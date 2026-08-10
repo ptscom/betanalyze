@@ -2,14 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
+import { analyzePostBigFall } from "@/lib/analyses/post-big-fall";
+import { analyzeReversal } from "@/lib/analyses/reversal";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
-import { PERIOD_OPTIONS } from "@/lib/analyses/types";
+import { PERIOD_OPTIONS, REVERSAL_PERIOD_OPTIONS } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   getCacheFilePath,
   serializeBet,
   serializeFirstCrossoverAnalysis,
   serializePeriodAnalysis,
+  serializePostBigFallAnalysis,
+  serializeReversalAnalysis,
   serializeRiseInMaAnalysis,
 } from "@/lib/parser/bets-cache";
 import { loadAllBetsFromExcel } from "@/lib/parser/load-bets";
@@ -22,6 +26,8 @@ export function buildBetsCache(): BetsCacheFile {
   const periodPerformance: BetsCacheFile["periodPerformance"] = {};
   const firstCrossover: BetsCacheFile["firstCrossover"] = {};
   const riseInMa: BetsCacheFile["riseInMa"] = {};
+  const reversal: BetsCacheFile["reversal"] = {};
+  const postBigFall: BetsCacheFile["postBigFall"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
     periodPerformance[String(days)] = serializePeriodAnalysis(
@@ -35,6 +41,17 @@ export function buildBetsCache(): BetsCacheFile {
     riseInMa[String(days)] = serializeRiseInMaAnalysis(
       analyzeRiseInMa(bets, days),
     );
+    console.log(`  Precomputing ${days}-day post big fall analysis...`);
+    postBigFall[String(days)] = serializePostBigFallAnalysis(
+      analyzePostBigFall(bets, days),
+    );
+  }
+
+  for (const days of REVERSAL_PERIOD_OPTIONS) {
+    console.log(`  Precomputing ${days}-day reversal analysis...`);
+    reversal[String(days)] = serializeReversalAnalysis(
+      analyzeReversal(bets, days),
+    );
   }
 
   const cache: BetsCacheFile = {
@@ -45,6 +62,8 @@ export function buildBetsCache(): BetsCacheFile {
     periodPerformance,
     firstCrossover,
     riseInMa,
+    reversal,
+    postBigFall,
   };
 
   const outputPath = getCacheFilePath();

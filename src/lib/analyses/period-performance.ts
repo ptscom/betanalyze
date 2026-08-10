@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates } from "@/lib/analyses/shared";
+import { buildDipSlabWinRates, buildPriceWinRates, computeDipMetrics, getPriceBracketLabel } from "@/lib/analyses/shared";
 import type {
   PeriodAggregateResult,
   PeriodBetResult,
@@ -109,6 +109,23 @@ export function analyzeBetPeriod(
     ? outcomes.candidates.find((candidate) => candidate.name === leader.name)
     : null;
 
+  const leaderStartSlab =
+    leader?.price != null ? getPriceBracketLabel(leader.price) : null;
+  const dipMetrics =
+    hasEnoughHistory && leader
+      ? computeDipMetrics(
+          bet,
+          leader.name,
+          leader.price,
+          checkDate,
+          closeDate,
+        )
+      : {
+          pickStartSlab: null,
+          dipSlabsTouched: [] as string[],
+          minPriceInWindow: null,
+        };
+
   return {
     betId: bet.id,
     betName: bet.name,
@@ -131,6 +148,9 @@ export function analyzeBetPeriod(
           new Set(winnerNames),
         )
       : [],
+    leaderStartSlab: dipMetrics.pickStartSlab ?? leaderStartSlab,
+    dipSlabsTouched: dipMetrics.dipSlabsTouched,
+    leaderMinPriceInWindow: dipMetrics.minPriceInWindow,
   };
 }
 
@@ -206,6 +226,13 @@ export function analyzePeriodPerformance(
     leaderPriceWinRates: buildPriceWinRates(
       eligible.map((result) => ({
         price: result.leaderPriceAtCheck,
+        won: result.leaderWon,
+      })),
+    ),
+    dipSlabWinRates: buildDipSlabWinRates(
+      eligible.map((result) => ({
+        startSlab: result.leaderStartSlab,
+        dipSlabsTouched: result.dipSlabsTouched,
         won: result.leaderWon,
       })),
     ),

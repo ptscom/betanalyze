@@ -4,25 +4,21 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { DipWinRateSection } from "@/components/dip-win-rate-section";
-import { RISE_IN_MA_CONFIG } from "@/lib/analyses/rise-in-ma";
-import type { RiseInMaAggregateResult } from "@/lib/analyses/types";
+import type { ReversalAggregateResult } from "@/lib/analyses/types";
 import { formatDate, formatPercent, formatPlace, formatPrice } from "@/lib/utils/format";
 
-interface RiseInMaViewProps {
-  analysis: RiseInMaAggregateResult;
+interface ReversalViewProps {
+  analysis: ReversalAggregateResult;
 }
 
-export function RiseInMaView({ analysis }: RiseInMaViewProps) {
-  const eligibleResults = analysis.betResults.filter(
-    (result) => result.hasEnoughHistory && result.hasSignal,
-  );
-
+export function ReversalView({ analysis }: ReversalViewProps) {
   const placeChartData = Object.entries(analysis.placeDistribution)
     .map(([place, count]) => ({
       place: Number(place),
@@ -31,93 +27,114 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
     }))
     .sort((a, b) => a.place - b.place);
 
-  const bracketRows = analysis.pickPriceWinRates.filter((row) => row.total > 0);
+  const bracketRows = analysis.peakPriceOutcomes.filter((row) => row.total > 0);
+
+  const outcomeChartData = bracketRows.map((row) => ({
+    bracket: row.label,
+    Reversed: row.total - row.becameWinner,
+    "Held on (won)": row.becameWinner,
+  }));
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <StatCard
-          label="Eligible bets"
-          value={String(analysis.eligibleBets)}
-          hint={`${analysis.totalBets - analysis.eligibleBets} had no MA rise signal`}
+          label="Candidates hit ≥ $0.90"
+          value={String(analysis.eligibleCandidates)}
+          hint={`across ${analysis.betsWithHits} bets`}
         />
         <StatCard
-          label="Signal pick won"
-          value={formatPercent(analysis.winRate)}
-          hint={`${analysis.picksWhoWon} of ${analysis.eligibleBets} bets`}
+          label="Reversal rate"
+          value={formatPercent(analysis.reversalRate)}
+          hint={`${analysis.reversals} ended as loser`}
+        />
+        <StatCard
+          label="Held on (won)"
+          value={formatPercent(analysis.holdRate)}
+          hint={`${analysis.heldOnCount} became winner`}
         />
         <StatCard
           label="Lookback window"
           value={`${analysis.periodDays} days`}
-          hint={`${RISE_IN_MA_CONFIG.maWindowDays}d MA, ${RISE_IN_MA_CONFIG.consecutiveIncreases}d rise`}
+          hint="all qualifying candidates counted"
         />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
         <ChartCard
-          title="Where signal picks finished"
-          description="Final place for the first candidate with consecutive MA increases in the window."
+          title="Reversal vs held on by peak price"
+          description="Candidates who reached $0.90+ in the window, grouped by their peak price in that window."
         >
-          <div className="h-64">
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={outcomeChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="bracket"
+                  tick={{ fontSize: 10 }}
+                  angle={-25}
+                  textAnchor="end"
+                  height={70}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Reversed" stackId="a" fill="#ef4444" />
+                <Bar
+                  dataKey="Held on (won)"
+                  stackId="a"
+                  fill="#16a34a"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        <ChartCard
+          title="Final place of reversed candidates"
+          description="Where candidates finished at close after hitting $0.90+ but losing."
+        >
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={placeChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="placeLabel" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h3 className="text-lg font-semibold text-zinc-900">How to read this</h3>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-600">
-            <li>
-              Each candidate gets a {RISE_IN_MA_CONFIG.maWindowDays}-day moving
-              average of their daily closing price.
-            </li>
-            <li>
-              A signal fires when the MA rises for{" "}
-              {RISE_IN_MA_CONFIG.consecutiveIncreases} consecutive days within
-              the last {analysis.periodDays} days before close.
-            </li>
-            <li>
-              If multiple candidates signal, only the <strong>first</strong> one
-              chronologically is counted for that bet.
-            </li>
-            <li>
-              We then check whether that pick ended with the highest final price
-              at close.
-            </li>
-          </ul>
-        </div>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h3 className="text-lg font-semibold text-zinc-900">
-          Signal price vs win rate
+          Peak price in window vs outcome
         </h3>
         <p className="mt-1 text-sm text-zinc-600">
-          The pick&apos;s market price on the day the MA rise pattern triggered,
-          grouped by bracket.
+          Highest price each candidate reached in the window after first crossing
+          $0.90.
         </p>
         <div className="mt-4 overflow-hidden rounded-lg border border-zinc-200">
           <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead className="bg-zinc-50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                  Price at signal
+                  Peak price
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                  Bets
+                  Candidates
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                  Became winner
+                  Reversed
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                  Win rate
+                  Held on (won)
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  Reversal rate
                 </th>
               </tr>
             </thead>
@@ -125,10 +142,10 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
               {bracketRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-zinc-500"
                   >
-                    No MA rise signals in this window.
+                    No candidates hit $0.90+ in this window.
                   </td>
                 </tr>
               ) : (
@@ -138,11 +155,14 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                       {row.label}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">{row.total}</td>
-                    <td className="px-4 py-3 text-zinc-700">
+                    <td className="px-4 py-3 text-red-700">
+                      {row.total - row.becameWinner}
+                    </td>
+                    <td className="px-4 py-3 text-green-700">
                       {row.becameWinner}
                     </td>
                     <td className="px-4 py-3 font-semibold text-zinc-900">
-                      {formatPercent(row.winRate)}
+                      {formatPercent(1 - row.winRate)}
                     </td>
                   </tr>
                 ))
@@ -154,17 +174,41 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
 
       <DipWinRateSection
         dipSlabWinRates={analysis.dipSlabWinRates}
-        startSlabSelectorLabel="Signal price slab:"
-        countLabel="Bets"
-        description="From the MA rise signal to close, if the signal pick fell through lower price slabs (daily closes, on down days only), what is the chance they still won? Entry price is their price on the signal day."
+        startSlabSelectorLabel="Price at first $0.90+ hit:"
+        countLabel="Candidates"
+        description="From the first day a candidate hit $0.90+ to close, if they fell through lower price slabs (daily closes, on down days only), what is the chance they still won? Entry price is their close on the first hit day."
       />
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <h3 className="text-lg font-semibold text-zinc-900">How to read this</h3>
+        <ul className="mt-3 space-y-2 text-sm text-zinc-600">
+          <li>
+            In the last {analysis.periodDays} days, every candidate whose daily
+            closing price reaches $0.90 or above is counted.
+          </li>
+          <li>
+            If two candidates in the same bet both hit $0.90+, both are included
+            as separate rows.
+          </li>
+          <li>
+            <strong>Reversed</strong> means they hit $0.90+ in the window but
+            did not end as the final winner at close.
+          </li>
+          <li>
+            <strong>Held on</strong> means they hit $0.90+ and still won at
+            close.
+          </li>
+        </ul>
+      </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold text-zinc-900">Bet-by-bet results</h2>
+          <h2 className="text-2xl font-semibold text-zinc-900">
+            Candidate-by-candidate results
+          </h2>
           <p className="mt-1 text-sm text-zinc-600">
-            First MA rise signal in the window, price and MA on that day, and
-            final outcome.
+            Every candidate who reached $0.90+ in the window and whether they
+            reversed.
           </p>
         </div>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -176,28 +220,25 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                     Bet
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Signal pick
+                    Candidate
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Price at signal
+                    First hit
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    5d MA
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Signal date
+                    Peak in window
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Dip slabs touched
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Min after signal
+                    Min after hit
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Final place
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                    Won?
+                    Outcome
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Actual winner
@@ -205,26 +246,22 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {eligibleResults.map((result) => (
-                  <tr key={result.betId} className="hover:bg-zinc-50">
+                {analysis.candidateResults.map((result) => (
+                  <tr
+                    key={`${result.betId}-${result.candidate}`}
+                    className="hover:bg-zinc-50"
+                  >
                     <td className="px-4 py-3 font-medium text-zinc-900">
                       {result.betName}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {result.signalCandidate}
+                      {result.candidate}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {result.signalPrice != null
-                        ? formatPrice(result.signalPrice)
-                        : "—"}
+                      {formatDate(result.firstHitAt)}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {result.signalMa != null
-                        ? formatPrice(result.signalMa)
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-700">
-                      {result.signalAt ? formatDate(result.signalAt) : "—"}
+                      {formatPrice(result.peakPriceInWindow)}
                     </td>
                     <td className="max-w-xs px-4 py-3 text-xs text-zinc-700">
                       {result.dipSlabsTouched.join(", ") || "—"}
@@ -235,16 +272,16 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                         : "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {formatPlace(result.pickFinalPlace)}
+                      {formatPlace(result.finalPlace)}
                     </td>
                     <td className="px-4 py-3">
-                      {result.pickWon ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                          Yes
+                      {result.reversed ? (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                          Reversed
                         </span>
                       ) : (
-                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                          No
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                          Held on
                         </span>
                       )}
                     </td>

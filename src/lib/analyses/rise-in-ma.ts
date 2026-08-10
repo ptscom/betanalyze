@@ -1,6 +1,6 @@
 import { addDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates } from "@/lib/analyses/shared";
+import { buildDipSlabWinRates, buildPriceWinRates, computeDipMetrics } from "@/lib/analyses/shared";
 import type {
   PeriodDays,
   RiseInMaAggregateResult,
@@ -67,6 +67,21 @@ export function analyzeBetRiseInMa(
       )
     : null;
 
+  const dipMetrics =
+    firstSignal?.signal.price != null && firstSignal.signal.day
+      ? computeDipMetrics(
+          bet,
+          firstSignal.candidate,
+          firstSignal.signal.price,
+          firstSignal.signal.day,
+          closeDate,
+        )
+      : {
+          pickStartSlab: null,
+          dipSlabsTouched: [] as string[],
+          minPriceInWindow: null,
+        };
+
   return {
     betId: bet.id,
     betName: bet.name,
@@ -82,6 +97,9 @@ export function analyzeBetRiseInMa(
     pickFinalPlace: pickOutcome?.place ?? null,
     pickWon: firstSignal?.candidate === outcomes.winner,
     actualWinner: outcomes.winner,
+    pickStartSlab: dipMetrics.pickStartSlab,
+    dipSlabsTouched: dipMetrics.dipSlabsTouched,
+    minPriceInWindow: dipMetrics.minPriceInWindow,
   };
 }
 
@@ -114,6 +132,13 @@ export function analyzeRiseInMa(
     pickPriceWinRates: buildPriceWinRates(
       eligible.map((result) => ({
         price: result.signalPrice,
+        won: result.pickWon,
+      })),
+    ),
+    dipSlabWinRates: buildDipSlabWinRates(
+      eligible.map((result) => ({
+        startSlab: result.pickStartSlab,
+        dipSlabsTouched: result.dipSlabsTouched,
         won: result.pickWon,
       })),
     ),
