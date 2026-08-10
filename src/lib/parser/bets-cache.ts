@@ -63,6 +63,10 @@ export interface SerializedReversalCandidateResult {
   reversed: boolean;
   heldOn: boolean;
   actualWinner: string | null;
+  priceAtFirstHit: number;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface SerializedReversalAggregateResult {
@@ -77,6 +81,7 @@ export interface SerializedReversalAggregateResult {
   holdRate: number;
   placeDistribution: Record<number, number>;
   peakPriceOutcomes: ReversalAggregateResult["peakPriceOutcomes"];
+  dipSlabWinRates: ReversalAggregateResult["dipSlabWinRates"];
   candidateResults: SerializedReversalCandidateResult[];
 }
 
@@ -95,6 +100,9 @@ export interface SerializedRiseInMaBetResult {
   pickFinalPlace: number | null;
   pickWon: boolean;
   actualWinner: string | null;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface SerializedRiseInMaAggregateResult {
@@ -105,6 +113,7 @@ export interface SerializedRiseInMaAggregateResult {
   winRate: number;
   placeDistribution: Record<number, number>;
   pickPriceWinRates: RiseInMaAggregateResult["pickPriceWinRates"];
+  dipSlabWinRates: RiseInMaAggregateResult["dipSlabWinRates"];
   betResults: SerializedRiseInMaBetResult[];
 }
 
@@ -124,6 +133,9 @@ export interface SerializedFirstCrossoverBetResult {
   pickFinalPlace: number | null;
   pickWon: boolean;
   actualWinner: string | null;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface SerializedFirstCrossoverAggregateResult {
@@ -134,6 +146,7 @@ export interface SerializedFirstCrossoverAggregateResult {
   winRate: number;
   placeDistribution: Record<number, number>;
   pickPriceWinRates: FirstCrossoverAggregateResult["pickPriceWinRates"];
+  dipSlabWinRates: FirstCrossoverAggregateResult["dipSlabWinRates"];
   betResults: SerializedFirstCrossoverBetResult[];
 }
 
@@ -215,6 +228,7 @@ export function serializeReversalAnalysis(
     holdRate: analysis.holdRate,
     placeDistribution: analysis.placeDistribution,
     peakPriceOutcomes: analysis.peakPriceOutcomes,
+    dipSlabWinRates: analysis.dipSlabWinRates,
     candidateResults: analysis.candidateResults.map((result) => ({
       betId: result.betId,
       betName: result.betName,
@@ -228,6 +242,10 @@ export function serializeReversalAnalysis(
       reversed: result.reversed,
       heldOn: result.heldOn,
       actualWinner: result.actualWinner,
+      priceAtFirstHit: result.priceAtFirstHit,
+      pickStartSlab: result.pickStartSlab,
+      dipSlabsTouched: result.dipSlabsTouched,
+      minPriceInWindow: result.minPriceInWindow,
     })),
   };
 }
@@ -237,11 +255,16 @@ export function deserializeReversalAnalysis(
 ): ReversalAggregateResult {
   return {
     ...analysis,
+    dipSlabWinRates: analysis.dipSlabWinRates ?? [],
     candidateResults: analysis.candidateResults.map((result) => ({
       ...result,
       closeDate: new Date(result.closeDate),
       windowStart: new Date(result.windowStart),
       firstHitAt: new Date(result.firstHitAt),
+      priceAtFirstHit: result.priceAtFirstHit ?? 0,
+      pickStartSlab: result.pickStartSlab ?? null,
+      dipSlabsTouched: result.dipSlabsTouched ?? [],
+      minPriceInWindow: result.minPriceInWindow ?? null,
     })),
   };
 }
@@ -257,6 +280,7 @@ export function serializeRiseInMaAnalysis(
     winRate: analysis.winRate,
     placeDistribution: analysis.placeDistribution,
     pickPriceWinRates: analysis.pickPriceWinRates,
+    dipSlabWinRates: analysis.dipSlabWinRates,
     betResults: analysis.betResults.map((result) => ({
       betId: result.betId,
       betName: result.betName,
@@ -272,6 +296,9 @@ export function serializeRiseInMaAnalysis(
       pickFinalPlace: result.pickFinalPlace,
       pickWon: result.pickWon,
       actualWinner: result.actualWinner,
+      pickStartSlab: result.pickStartSlab,
+      dipSlabsTouched: result.dipSlabsTouched,
+      minPriceInWindow: result.minPriceInWindow,
     })),
   };
 }
@@ -281,11 +308,15 @@ export function deserializeRiseInMaAnalysis(
 ): RiseInMaAggregateResult {
   return {
     ...analysis,
+    dipSlabWinRates: analysis.dipSlabWinRates ?? [],
     betResults: analysis.betResults.map((result) => ({
       ...result,
       closeDate: new Date(result.closeDate),
       windowStart: new Date(result.windowStart),
       signalAt: result.signalAt ? new Date(result.signalAt) : null,
+      pickStartSlab: result.pickStartSlab ?? null,
+      dipSlabsTouched: result.dipSlabsTouched ?? [],
+      minPriceInWindow: result.minPriceInWindow ?? null,
     })),
   };
 }
@@ -301,6 +332,7 @@ export function serializeFirstCrossoverAnalysis(
     winRate: analysis.winRate,
     placeDistribution: analysis.placeDistribution,
     pickPriceWinRates: analysis.pickPriceWinRates,
+    dipSlabWinRates: analysis.dipSlabWinRates,
     betResults: analysis.betResults.map((result) => ({
       betId: result.betId,
       betName: result.betName,
@@ -317,6 +349,9 @@ export function serializeFirstCrossoverAnalysis(
       pickFinalPlace: result.pickFinalPlace,
       pickWon: result.pickWon,
       actualWinner: result.actualWinner,
+      pickStartSlab: result.pickStartSlab,
+      dipSlabsTouched: result.dipSlabsTouched,
+      minPriceInWindow: result.minPriceInWindow,
     })),
   };
 }
@@ -326,11 +361,15 @@ export function deserializeFirstCrossoverAnalysis(
 ): FirstCrossoverAggregateResult {
   return {
     ...analysis,
+    dipSlabWinRates: analysis.dipSlabWinRates ?? [],
     betResults: analysis.betResults.map((result) => ({
       ...result,
       closeDate: new Date(result.closeDate),
       windowStart: new Date(result.windowStart),
       crossoverAt: result.crossoverAt ? new Date(result.crossoverAt) : null,
+      pickStartSlab: result.pickStartSlab ?? null,
+      dipSlabsTouched: result.dipSlabsTouched ?? [],
+      minPriceInWindow: result.minPriceInWindow ?? null,
     })),
   };
 }

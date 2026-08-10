@@ -63,6 +63,9 @@ export interface FirstCrossoverBetResult {
   pickFinalPlace: number | null;
   pickWon: boolean;
   actualWinner: string | null;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface FirstCrossoverAggregateResult {
@@ -73,6 +76,7 @@ export interface FirstCrossoverAggregateResult {
   winRate: number;
   placeDistribution: Record<number, number>;
   pickPriceWinRates: PriceBracketWinRate[];
+  dipSlabWinRates: DipSlabWinRate[];
   betResults: FirstCrossoverBetResult[];
 }
 
@@ -91,6 +95,9 @@ export interface RiseInMaBetResult {
   pickFinalPlace: number | null;
   pickWon: boolean;
   actualWinner: string | null;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface RiseInMaAggregateResult {
@@ -101,6 +108,7 @@ export interface RiseInMaAggregateResult {
   winRate: number;
   placeDistribution: Record<number, number>;
   pickPriceWinRates: PriceBracketWinRate[];
+  dipSlabWinRates: DipSlabWinRate[];
   betResults: RiseInMaBetResult[];
 }
 
@@ -137,6 +145,10 @@ export interface ReversalCandidateResult {
   reversed: boolean;
   heldOn: boolean;
   actualWinner: string | null;
+  priceAtFirstHit: number;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
 }
 
 export interface ReversalAggregateResult {
@@ -151,5 +163,6 @@ export interface ReversalAggregateResult {
   holdRate: number;
   placeDistribution: Record<number, number>;
   peakPriceOutcomes: PriceBracketWinRate[];
+  dipSlabWinRates: DipSlabWinRate[];
   candidateResults: ReversalCandidateResult[];
 }

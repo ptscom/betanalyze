@@ -1,6 +1,6 @@
 import { addDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates } from "@/lib/analyses/shared";
+import { buildDipSlabWinRates, buildPriceWinRates, computeDipMetrics } from "@/lib/analyses/shared";
 import type {
   ReversalAggregateResult,
   ReversalCandidateResult,
@@ -12,6 +12,7 @@ import { getDailyClosingPrices } from "@/lib/engine/timeline";
 
 interface CandidateThresholdHit {
   firstHitAt: Date;
+  priceAtFirstHit: number;
   peakPriceInWindow: number;
 }
 
@@ -25,6 +26,7 @@ function findCandidateThresholdHit(
   const closeTime = closeDate.getTime();
 
   let firstHitAt: Date | null = null;
+  let priceAtFirstHit: number | null = null;
   let peakPriceInWindow = 0;
 
   for (const [dayKey, price] of dailyPrices.entries()) {
@@ -39,14 +41,15 @@ function findCandidateThresholdHit(
 
     if (price >= threshold && !firstHitAt) {
       firstHitAt = new Date(dayKey);
+      priceAtFirstHit = price;
     }
   }
 
-  if (!firstHitAt) {
+  if (!firstHitAt || priceAtFirstHit == null) {
     return null;
   }
 
-  return { firstHitAt, peakPriceInWindow };
+  return { firstHitAt, priceAtFirstHit, peakPriceInWindow };
 }
 
 export function analyzeBetReversal(
@@ -80,6 +83,13 @@ export function analyzeBetReversal(
       (outcome) => outcome.name === candidate,
     );
     const heldOn = candidate === outcomes.winner;
+    const dipMetrics = computeDipMetrics(
+      bet,
+      candidate,
+      hit.priceAtFirstHit,
+      hit.firstHitAt,
+      closeDate,
+    );
 
     results.push({
       betId: bet.id,
@@ -94,6 +104,10 @@ export function analyzeBetReversal(
       reversed: !heldOn,
       heldOn,
       actualWinner: outcomes.winner,
+      priceAtFirstHit: hit.priceAtFirstHit,
+      pickStartSlab: dipMetrics.pickStartSlab,
+      dipSlabsTouched: dipMetrics.dipSlabsTouched,
+      minPriceInWindow: dipMetrics.minPriceInWindow,
     });
   }
 
@@ -139,6 +153,13 @@ export function analyzeReversal(
     peakPriceOutcomes: buildPriceWinRates(
       candidateResults.map((result) => ({
         price: result.peakPriceInWindow,
+        won: result.heldOn,
+      })),
+    ),
+    dipSlabWinRates: buildDipSlabWinRates(
+      candidateResults.map((result) => ({
+        startSlab: result.pickStartSlab,
+        dipSlabsTouched: result.dipSlabsTouched,
         won: result.heldOn,
       })),
     ),

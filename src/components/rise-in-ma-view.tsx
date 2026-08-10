@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DipWinRateSection } from "@/components/dip-win-rate-section";
 import { RISE_IN_MA_CONFIG } from "@/lib/analyses/rise-in-ma";
 import type { RiseInMaAggregateResult } from "@/lib/analyses/types";
 import { formatDate, formatPercent, formatPlace, formatPrice } from "@/lib/utils/format";
@@ -151,6 +152,13 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
         </div>
       </section>
 
+      <DipWinRateSection
+        dipSlabWinRates={analysis.dipSlabWinRates}
+        startSlabSelectorLabel="Signal price slab:"
+        countLabel="Bets"
+        description="From the MA rise signal to close, if the signal pick fell through lower price slabs (daily closes, on down days only), what is the chance they still won? Entry price is their price on the signal day."
+      />
+
       <section className="space-y-4">
         <div>
           <h2 className="text-2xl font-semibold text-zinc-900">Bet-by-bet results</h2>
@@ -178,6 +186,12 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Signal date
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Dip slabs touched
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Min after signal
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Final place
@@ -211,6 +225,14 @@ export function RiseInMaView({ analysis }: RiseInMaViewProps) {
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {result.signalAt ? formatDate(result.signalAt) : "—"}
+                    </td>
+                    <td className="max-w-xs px-4 py-3 text-xs text-zinc-700">
+                      {result.dipSlabsTouched.join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {result.minPriceInWindow != null
+                        ? formatPrice(result.minPriceInWindow)
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {formatPlace(result.pickFinalPlace)}

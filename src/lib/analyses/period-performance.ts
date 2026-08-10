@@ -1,15 +1,14 @@
 import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates, getPriceBracketLabel, getSlabsTouchedWhileFalling, PRICE_BRACKETS } from "@/lib/analyses/shared";
+import { buildDipSlabWinRates, buildPriceWinRates, computeDipMetrics, getPriceBracketLabel } from "@/lib/analyses/shared";
 import type {
-  DipSlabWinRate,
   PeriodAggregateResult,
   PeriodBetResult,
   PeriodChartPoint,
   PeriodDays,
 } from "@/lib/analyses/types";
 import { computeBetOutcomes, getCloseDate } from "@/lib/engine/outcomes";
-import { buildAlignedTimeline, getDailyClosingPrices } from "@/lib/engine/timeline";
+import { buildAlignedTimeline } from "@/lib/engine/timeline";
 
 function findSnapshotAtOrBefore(
   timeline: ReturnType<typeof buildAlignedTimeline>,
@@ -92,81 +91,6 @@ function buildPeriodChartData(
   });
 }
 
-function getLeaderDailyPricesInWindow(
-  bet: BetMarket,
-  leaderName: string,
-  startPrice: number,
-  checkDate: Date,
-  closeDate: Date,
-): number[] {
-  const dailyByCandidate = getDailyClosingPrices(bet);
-  const leaderDaily = dailyByCandidate.get(leaderName);
-  const checkTime = startOfDay(checkDate).getTime();
-  const closeTime = closeDate.getTime();
-
-  const subsequentCloses = leaderDaily
-    ? [...leaderDaily.entries()]
-        .filter(([dayKey]) => {
-          const dayTime = new Date(dayKey).getTime();
-          return dayTime > checkTime && dayTime <= closeTime;
-        })
-        .sort(
-          (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime(),
-        )
-        .map(([, price]) => price)
-    : [];
-
-  return [startPrice, ...subsequentCloses];
-}
-
-function buildDipSlabWinRates(
-  betResults: PeriodBetResult[],
-): DipSlabWinRate[] {
-  const cells = new Map<
-    string,
-    { startSlab: string; dipSlab: string; total: number; becameWinner: number }
-  >();
-
-  for (const result of betResults) {
-    if (!result.hasEnoughHistory || !result.leaderStartSlab) {
-      continue;
-    }
-
-    for (const dipSlab of result.dipSlabsTouched) {
-      const key = `${result.leaderStartSlab}|${dipSlab}`;
-      const cell = cells.get(key) ?? {
-        startSlab: result.leaderStartSlab,
-        dipSlab,
-        total: 0,
-        becameWinner: 0,
-      };
-      cell.total += 1;
-      if (result.leaderWon) {
-        cell.becameWinner += 1;
-      }
-      cells.set(key, cell);
-    }
-  }
-
-  return [...cells.values()]
-    .sort((a, b) => {
-      const startDiff =
-        PRICE_BRACKETS.findIndex((bracket) => bracket.label === a.startSlab) -
-        PRICE_BRACKETS.findIndex((bracket) => bracket.label === b.startSlab);
-      if (startDiff !== 0) {
-        return startDiff;
-      }
-      return (
-        PRICE_BRACKETS.findIndex((bracket) => bracket.label === a.dipSlab) -
-        PRICE_BRACKETS.findIndex((bracket) => bracket.label === b.dipSlab)
-      );
-    })
-    .map((cell) => ({
-      ...cell,
-      winRate: cell.total > 0 ? cell.becameWinner / cell.total : 0,
-    }));
-}
-
 export function analyzeBetPeriod(
   bet: BetMarket,
   periodDays: PeriodDays,
@@ -187,24 +111,20 @@ export function analyzeBetPeriod(
 
   const leaderStartSlab =
     leader?.price != null ? getPriceBracketLabel(leader.price) : null;
-  const leaderDailyPrices =
+  const dipMetrics =
     hasEnoughHistory && leader
-      ? getLeaderDailyPricesInWindow(
+      ? computeDipMetrics(
           bet,
           leader.name,
           leader.price,
           checkDate,
           closeDate,
         )
-      : [];
-  const dipSlabsTouched =
-    hasEnoughHistory && leader
-      ? getSlabsTouchedWhileFalling(leaderDailyPrices, leader.price)
-      : [];
-  const leaderMinPriceInWindow =
-    leaderDailyPrices.length > 0
-      ? Math.min(...leaderDailyPrices)
-      : null;
+      : {
+          pickStartSlab: null,
+          dipSlabsTouched: [] as string[],
+          minPriceInWindow: null,
+        };
 
   return {
     betId: bet.id,
@@ -228,9 +148,9 @@ export function analyzeBetPeriod(
           new Set(winnerNames),
         )
       : [],
-    leaderStartSlab,
-    dipSlabsTouched,
-    leaderMinPriceInWindow,
+    leaderStartSlab: dipMetrics.pickStartSlab ?? leaderStartSlab,
+    dipSlabsTouched: dipMetrics.dipSlabsTouched,
+    leaderMinPriceInWindow: dipMetrics.minPriceInWindow,
   };
 }
 
@@ -309,7 +229,13 @@ export function analyzePeriodPerformance(
         won: result.leaderWon,
       })),
     ),
-    dipSlabWinRates: buildDipSlabWinRates(betResults),
+    dipSlabWinRates: buildDipSlabWinRates(
+      eligible.map((result) => ({
+        startSlab: result.leaderStartSlab,
+        dipSlabsTouched: result.dipSlabsTouched,
+        won: result.leaderWon,
+      })),
+    ),
     aggregateEvolution: buildAggregateEvolution(betResults, periodDays),
     betResults,
   };

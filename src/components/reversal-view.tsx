@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DipWinRateSection } from "@/components/dip-win-rate-section";
 import type { ReversalAggregateResult } from "@/lib/analyses/types";
 import { formatDate, formatPercent, formatPlace, formatPrice } from "@/lib/utils/format";
 
@@ -171,6 +172,13 @@ export function ReversalView({ analysis }: ReversalViewProps) {
         </div>
       </section>
 
+      <DipWinRateSection
+        dipSlabWinRates={analysis.dipSlabWinRates}
+        startSlabSelectorLabel="Price at first $0.90+ hit:"
+        countLabel="Candidates"
+        description="From the first day a candidate hit $0.90+ to close, if they fell through lower price slabs (daily closes, on down days only), what is the chance they still won? Entry price is their close on the first hit day."
+      />
+
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h3 className="text-lg font-semibold text-zinc-900">How to read this</h3>
         <ul className="mt-3 space-y-2 text-sm text-zinc-600">
@@ -221,6 +229,12 @@ export function ReversalView({ analysis }: ReversalViewProps) {
                     Peak in window
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Dip slabs touched
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Min after hit
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Final place
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
@@ -248,6 +262,14 @@ export function ReversalView({ analysis }: ReversalViewProps) {
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {formatPrice(result.peakPriceInWindow)}
+                    </td>
+                    <td className="max-w-xs px-4 py-3 text-xs text-zinc-700">
+                      {result.dipSlabsTouched.join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {result.minPriceInWindow != null
+                        ? formatPrice(result.minPriceInWindow)
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {formatPlace(result.finalPlace)}

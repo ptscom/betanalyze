@@ -1,6 +1,6 @@
 import { addDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates } from "@/lib/analyses/shared";
+import { buildDipSlabWinRates, buildPriceWinRates, computeDipMetrics } from "@/lib/analyses/shared";
 import type {
   FirstCrossoverAggregateResult,
   FirstCrossoverBetResult,
@@ -29,6 +29,21 @@ export function analyzeBetFirstCrossover(
       )
     : null;
 
+  const dipMetrics =
+    crossover?.newTopper && crossover.newTopperPrice != null && crossover.loggedAt
+      ? computeDipMetrics(
+          bet,
+          crossover.newTopper,
+          crossover.newTopperPrice,
+          crossover.loggedAt,
+          closeDate,
+        )
+      : {
+          pickStartSlab: null,
+          dipSlabsTouched: [] as string[],
+          minPriceInWindow: null,
+        };
+
   return {
     betId: bet.id,
     betName: bet.name,
@@ -45,6 +60,9 @@ export function analyzeBetFirstCrossover(
     pickFinalPlace: pickOutcome?.place ?? null,
     pickWon: crossover?.newTopper === outcomes.winner,
     actualWinner: outcomes.winner,
+    pickStartSlab: dipMetrics.pickStartSlab,
+    dipSlabsTouched: dipMetrics.dipSlabsTouched,
+    minPriceInWindow: dipMetrics.minPriceInWindow,
   };
 }
 
@@ -77,6 +95,13 @@ export function analyzeFirstCrossover(
     pickPriceWinRates: buildPriceWinRates(
       eligible.map((result) => ({
         price: result.crossoverPrice,
+        won: result.pickWon,
+      })),
+    ),
+    dipSlabWinRates: buildDipSlabWinRates(
+      eligible.map((result) => ({
+        startSlab: result.pickStartSlab,
+        dipSlabsTouched: result.dipSlabsTouched,
         won: result.pickWon,
       })),
     ),
