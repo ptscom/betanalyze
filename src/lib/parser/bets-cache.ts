@@ -45,6 +45,9 @@ export interface SerializedPeriodBetResult {
   leaderWon: boolean;
   actualWinner: string | null;
   winnerNames: string[];
+  leaderStartSlab: string | null;
+  dipSlabsTouched: string[];
+  leaderMinPriceInWindow: number | null;
 }
 
 export interface SerializedReversalCandidateResult {
@@ -143,6 +146,7 @@ export interface SerializedPeriodAggregateResult {
   avgFinalPlace: number | null;
   placeDistribution: Record<number, number>;
   leaderPriceWinRates: PeriodAggregateResult["leaderPriceWinRates"];
+  dipSlabWinRates: PeriodAggregateResult["dipSlabWinRates"];
   aggregateEvolution: PeriodAggregateResult["aggregateEvolution"];
   betResults: SerializedPeriodBetResult[];
 }
@@ -343,6 +347,7 @@ export function serializePeriodAnalysis(
     avgFinalPlace: analysis.avgFinalPlace,
     placeDistribution: analysis.placeDistribution,
     leaderPriceWinRates: analysis.leaderPriceWinRates,
+    dipSlabWinRates: analysis.dipSlabWinRates,
     aggregateEvolution: analysis.aggregateEvolution,
     betResults: analysis.betResults.map((result) => ({
       betId: result.betId,
@@ -358,6 +363,9 @@ export function serializePeriodAnalysis(
       leaderWon: result.leaderWon,
       actualWinner: result.actualWinner,
       winnerNames: result.winnerNames,
+      leaderStartSlab: result.leaderStartSlab,
+      dipSlabsTouched: result.dipSlabsTouched,
+      leaderMinPriceInWindow: result.leaderMinPriceInWindow,
     })),
   };
 }
@@ -367,11 +375,15 @@ export function deserializePeriodAnalysis(
 ): PeriodAggregateResult {
   return {
     ...analysis,
+    dipSlabWinRates: analysis.dipSlabWinRates ?? [],
     betResults: analysis.betResults.map((result) => ({
       ...result,
       closeDate: new Date(result.closeDate),
       checkDate: new Date(result.checkDate),
       periodChartData: [],
+      leaderStartSlab: result.leaderStartSlab ?? null,
+      dipSlabsTouched: result.dipSlabsTouched ?? [],
+      leaderMinPriceInWindow: result.leaderMinPriceInWindow ?? null,
     })),
   };
 }

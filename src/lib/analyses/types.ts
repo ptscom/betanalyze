@@ -17,6 +17,9 @@ export interface PeriodBetResult {
   actualWinner: string | null;
   winnerNames: string[];
   periodChartData: PeriodChartPoint[];
+  leaderStartSlab: string | null;
+  dipSlabsTouched: string[];
+  leaderMinPriceInWindow: number | null;
 }
 
 export interface PeriodChartPoint {
@@ -31,6 +34,14 @@ export interface PriceBracketWinRate {
   label: string;
   min: number;
   max: number;
+  total: number;
+  becameWinner: number;
+  winRate: number;
+}
+
+export interface DipSlabWinRate {
+  startSlab: string;
+  dipSlab: string;
   total: number;
   becameWinner: number;
   winRate: number;
@@ -102,6 +113,7 @@ export interface PeriodAggregateResult {
   avgFinalPlace: number | null;
   placeDistribution: Record<number, number>;
   leaderPriceWinRates: PriceBracketWinRate[];
+  dipSlabWinRates: DipSlabWinRate[];
   aggregateEvolution: { dayOffset: number; winnerAvg: number; otherAvg: number }[];
   betResults: PeriodBetResult[];
 }
