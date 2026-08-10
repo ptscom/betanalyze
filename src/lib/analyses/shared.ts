@@ -110,6 +110,40 @@ export function getCandidateDailyPricesFromAnchor(
   return [anchorPrice, ...subsequentCloses];
 }
 
+export function getCandidateDailySeries(
+  bet: BetMarket,
+  candidateName: string,
+  anchorPrice: number,
+  anchorDate: Date,
+  closeDate: Date,
+): { day: Date; price: number }[] {
+  const dailyByCandidate = getDailyClosingPrices(bet);
+  const candidateDaily = dailyByCandidate.get(candidateName);
+  const anchorTime = startOfDay(anchorDate).getTime();
+  const closeTime = closeDate.getTime();
+
+  const series: { day: Date; price: number }[] = [
+    { day: startOfDay(anchorDate), price: anchorPrice },
+  ];
+
+  if (!candidateDaily) {
+    return series;
+  }
+
+  const subsequentCloses = [...candidateDaily.entries()]
+    .filter(([dayKey]) => {
+      const dayTime = new Date(dayKey).getTime();
+      return dayTime > anchorTime && dayTime <= closeTime;
+    })
+    .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+    .map(([dayKey, price]) => ({
+      day: new Date(dayKey),
+      price,
+    }));
+
+  return [...series, ...subsequentCloses];
+}
+
 export function computeDipMetrics(
   bet: BetMarket,
   candidateName: string,

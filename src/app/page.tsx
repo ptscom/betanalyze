@@ -100,6 +100,18 @@ export default function HomePage() {
               what percentage end up as losers at close?
             </p>
           </Link>
+          <Link
+            href="/analyze/post-big-fall?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Post Big Fall
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              When the period-start leader drops ≥25% in 1–2 days, how often do
+              they still win? Includes dip win-rate from the post-fall price.
+            </p>
+          </Link>
         </div>
       </section>
 

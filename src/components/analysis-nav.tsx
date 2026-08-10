@@ -78,7 +78,12 @@ export function ReversalPeriodSelector({
 }
 
 interface AnalysisNavProps {
-  active: "period-performance" | "first-crossover" | "rise-in-ma" | "reversal";
+  active:
+    | "period-performance"
+    | "first-crossover"
+    | "rise-in-ma"
+    | "reversal"
+    | "post-big-fall";
 }
 
 export function AnalysisNav({ active }: AnalysisNavProps) {
@@ -123,6 +128,16 @@ export function AnalysisNav({ active }: AnalysisNavProps) {
         }`}
       >
         Reversal
+      </Link>
+      <Link
+        href="/analyze/post-big-fall?days=14"
+        className={`rounded-full px-4 py-2 text-sm font-medium ${
+          active === "post-big-fall"
+            ? "bg-blue-600 text-white"
+            : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50"
+        }`}
+      >
+        Post Big Fall
       </Link>
     </nav>
   );

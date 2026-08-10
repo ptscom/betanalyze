@@ -166,3 +166,44 @@ export interface ReversalAggregateResult {
   dipSlabWinRates: DipSlabWinRate[];
   candidateResults: ReversalCandidateResult[];
 }
+
+export const POST_BIG_FALL_THRESHOLD = 0.25;
+
+export interface PostBigFallBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  checkDate: Date;
+  periodDays: PeriodDays;
+  hasEnoughHistory: boolean;
+  leaderAtCheck: string | null;
+  leaderPriceAtCheck: number | null;
+  leaderStartSlab: string | null;
+  hasBigFall: boolean;
+  fallDays: 1 | 2 | null;
+  fallAt: Date | null;
+  priceBeforeFall: number | null;
+  priceAfterFall: number | null;
+  fallPct: number | null;
+  leaderFinalPlace: number | null;
+  leaderWon: boolean;
+  actualWinner: string | null;
+  pickStartSlab: string | null;
+  dipSlabsTouched: string[];
+  minPriceInWindow: number | null;
+}
+
+export interface PostBigFallAggregateResult {
+  periodDays: PeriodDays;
+  threshold: typeof POST_BIG_FALL_THRESHOLD;
+  totalBets: number;
+  eligibleBets: number;
+  leadersWhoWon: number;
+  winRate: number;
+  oneDayFalls: number;
+  twoDayFalls: number;
+  placeDistribution: Record<number, number>;
+  priceAfterFallWinRates: PriceBracketWinRate[];
+  dipSlabWinRates: DipSlabWinRate[];
+  betResults: PostBigFallBetResult[];
+}
