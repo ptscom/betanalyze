@@ -13,6 +13,52 @@ export const PRICE_BRACKETS = [
   { label: "$0.90+", min: 0.9, max: 1.01 },
 ];
 
+export function getPriceBracketLabel(price: number): string | null {
+  const bracket = PRICE_BRACKETS.find(
+    (row) => price >= row.min && price < row.max,
+  );
+  return bracket?.label ?? null;
+}
+
+export function getSlabsInPriceRange(
+  lowPrice: number,
+  highPrice: number,
+): string[] {
+  const low = Math.min(lowPrice, highPrice);
+  const high = Math.max(lowPrice, highPrice);
+
+  return PRICE_BRACKETS.filter(
+    (bracket) => bracket.min < high && bracket.max > low,
+  ).map((bracket) => bracket.label);
+}
+
+export function getSlabsTouchedWhileFalling(dailyPrices: number[]): string[] {
+  if (dailyPrices.length === 0) {
+    return [];
+  }
+
+  const touched = new Set<string>();
+  const startLabel = getPriceBracketLabel(dailyPrices[0]);
+  if (startLabel) {
+    touched.add(startLabel);
+  }
+
+  let previousPrice = dailyPrices[0];
+  for (let index = 1; index < dailyPrices.length; index++) {
+    const currentPrice = dailyPrices[index];
+    if (currentPrice < previousPrice) {
+      for (const label of getSlabsInPriceRange(currentPrice, previousPrice)) {
+        touched.add(label);
+      }
+    }
+    previousPrice = currentPrice;
+  }
+
+  return PRICE_BRACKETS.filter((bracket) => touched.has(bracket.label)).map(
+    (bracket) => bracket.label,
+  );
+}
+
 export function buildPriceWinRates(
   picks: { price: number | null; won: boolean }[],
 ): PriceBracketWinRate[] {
