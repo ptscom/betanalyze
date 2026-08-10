@@ -215,9 +215,10 @@ export function PeriodPerformanceView({ analysis }: PeriodPerformanceViewProps) 
           </h2>
           <p className="mt-2 max-w-4xl text-sm text-zinc-600">
             If the period leader started in a price slab and their price fell
-            through lower slabs on the way down (using daily closes), what is
-            the chance they still won at close? Each slab touched while falling
-            is counted — so one bet can appear in multiple dip rows.
+            through lower slabs (daily closes, on down days only), what is the
+            chance they still won at close? Only slabs at or below the
+            period-start price count as dips — a rally above start then
+            pulling back to $0.75 is not a dip if they started at $0.65.
           </p>
         </div>
 
