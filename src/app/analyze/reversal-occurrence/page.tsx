@@ -25,7 +25,7 @@ function parsePeriodDays(value?: string): PeriodDays {
 
 function parseThreshold(value?: string): ReversalThreshold {
   const parsed = Number.parseFloat(value ?? "0.8");
-  if (parsed === 0.8 || parsed === 0.9) {
+  if (parsed === 0.7 || parsed === 0.8 || parsed === 0.9) {
     return parsed;
   }
   return 0.8;

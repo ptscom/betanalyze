@@ -96,7 +96,8 @@ export default function HomePage() {
               Reversal Occurrence
             </h3>
             <p className="mt-2 text-sm text-zinc-600">
-              First time a candidate hits above $0.80 or $0.90 in the window —
+              First time a candidate hits above $0.70, $0.80, or $0.90 in the
+              window — track reversal vs held-on rate.
               track how often they reversed vs held on to win.
             </p>
           </Link>
