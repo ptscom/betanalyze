@@ -1,8 +1,0 @@
-Place Excel bet export files in this folder.
-
-Expected columns:
-- Logged At
-- Section
-- Displayed Market Price
-
-Run `npm run generate:sample-data` to create demo files.
