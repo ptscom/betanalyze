@@ -93,9 +93,9 @@ export interface RiseInMaAggregateResult {
   betResults: RiseInMaBetResult[];
 }
 
-export type ReversalThreshold = 0.7 | 0.8 | 0.9;
+export type ReversalThreshold = 0.5 | 0.6 | 0.7 | 0.8 | 0.9;
 
-export const THRESHOLD_OPTIONS: ReversalThreshold[] = [0.7, 0.8, 0.9];
+export const THRESHOLD_OPTIONS: ReversalThreshold[] = [0.5, 0.6, 0.7, 0.8, 0.9];
 
 export function reversalCacheKey(
   periodDays: PeriodDays,
