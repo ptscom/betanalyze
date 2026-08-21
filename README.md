@@ -14,6 +14,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 After adding or changing Excel files in `data/bets/`, rerun `npm run build:data`.
 
+## Multiple datasets (separate branches)
+
+This repo uses **one dataset per git branch** so analyses never mix files from
+different batches. See [`data/DATASETS.md`](data/DATASETS.md).
+
+| Branch | Dataset |
+|--------|---------|
+| `main` / `cursor/reversal-occurrence-analysis-d286` | Primary elections |
+| `dataset/elections_2` | `elections_2` (same app code, separate Excel files) |
+
+To work on the second batch: `git checkout dataset/elections_2`, add only those Excel
+files to `data/bets/`, then `npm run build:data`. Deploy that branch as its own Vercel
+production branch or project.
+
 ## Add your data
 
 Drop your Excel exports into `data/bets/`. Each file is one bet (market/race).
