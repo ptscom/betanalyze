@@ -3,6 +3,7 @@ import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
 import type {
   FirstCrossoverAggregateResult,
+  GapChangeAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
   ReversalOccurrenceAggregateResult,
@@ -76,6 +77,40 @@ export interface SerializedReversalOccurrenceAggregateResult {
   holdRate: number;
   slabWinRates: ReversalOccurrenceAggregateResult["slabWinRates"];
   betResults: SerializedReversalOccurrenceBetResult[];
+}
+
+export interface SerializedGapChangeBetResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: PeriodDays;
+  direction: GapChangeAggregateResult["direction"];
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalGap: number | null;
+  leaderAtSignal: string | null;
+  leaderPriceAtSignal: number | null;
+  secondAtSignal: string | null;
+  secondPriceAtSignal: number | null;
+  signalAt: string | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedGapChangeAggregateResult {
+  direction: GapChangeAggregateResult["direction"];
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: GapChangeAggregateResult["pickPriceWinRates"];
+  betResults: SerializedGapChangeBetResult[];
 }
 
 export interface SerializedRiseInMaBetResult {
@@ -156,6 +191,8 @@ export interface BetsCacheFile {
   periodPerformance: Record<string, SerializedPeriodAggregateResult>;
   firstCrossover: Record<string, SerializedFirstCrossoverAggregateResult>;
   riseInMa: Record<string, SerializedRiseInMaAggregateResult>;
+  gapDecrease: Record<string, SerializedGapChangeAggregateResult>;
+  gapIncrease: Record<string, SerializedGapChangeAggregateResult>;
   reversalOccurrence: Record<string, SerializedReversalOccurrenceAggregateResult>;
 }
 
@@ -249,6 +286,56 @@ export function deserializeReversalOccurrenceAnalysis(
       windowStart: new Date(result.windowStart),
       hitSlab: result.hitSlab ?? null,
       hitAt: result.hitAt ? new Date(result.hitAt) : null,
+    })),
+  };
+}
+
+export function serializeGapChangeAnalysis(
+  analysis: GapChangeAggregateResult,
+): SerializedGapChangeAggregateResult {
+  return {
+    direction: analysis.direction,
+    periodDays: analysis.periodDays,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    picksWhoWon: analysis.picksWhoWon,
+    winRate: analysis.winRate,
+    placeDistribution: analysis.placeDistribution,
+    pickPriceWinRates: analysis.pickPriceWinRates,
+    betResults: analysis.betResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      direction: result.direction,
+      hasEnoughHistory: result.hasEnoughHistory,
+      hasSignal: result.hasSignal,
+      signalCandidate: result.signalCandidate,
+      signalPrice: result.signalPrice,
+      signalGap: result.signalGap,
+      leaderAtSignal: result.leaderAtSignal,
+      leaderPriceAtSignal: result.leaderPriceAtSignal,
+      secondAtSignal: result.secondAtSignal,
+      secondPriceAtSignal: result.secondPriceAtSignal,
+      signalAt: result.signalAt?.toISOString() ?? null,
+      pickFinalPlace: result.pickFinalPlace,
+      pickWon: result.pickWon,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeGapChangeAnalysis(
+  analysis: SerializedGapChangeAggregateResult,
+): GapChangeAggregateResult {
+  return {
+    ...analysis,
+    betResults: analysis.betResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      signalAt: result.signalAt ? new Date(result.signalAt) : null,
     })),
   };
 }

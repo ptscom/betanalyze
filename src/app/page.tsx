@@ -89,6 +89,30 @@ export default function HomePage() {
             </p>
           </Link>
           <Link
+            href="/analyze/gap-decrease?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Gap Decrease
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              When #1–#2 gap shrinks for 2 days, track whether the runner-up
+              wins at close.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/gap-increase?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Gap Increase
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              When #1–#2 gap widens for 2 days, track whether the leader wins at
+              close.
+            </p>
+          </Link>
+          <Link
             href="/analyze/reversal-occurrence?days=14"
             className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
           >
