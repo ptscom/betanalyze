@@ -1,26 +1,30 @@
 import { addDays, startOfDay } from "date-fns";
 import type { BetMarket } from "@/lib/models/types";
-import { buildPriceWinRates } from "@/lib/analyses/shared";
 import type {
   PeriodDays,
   ReversalOccurrenceAggregateResult,
   ReversalOccurrenceBetResult,
-  ReversalThreshold,
+  ReversalSlabWinRate,
+} from "@/lib/analyses/types";
+import {
+  getReversalOccurrenceSlabLabel,
+  REVERSAL_OCCURRENCE_MIN_PRICE,
+  REVERSAL_OCCURRENCE_SLABS,
 } from "@/lib/analyses/types";
 import { computeBetOutcomes, getCloseDate } from "@/lib/engine/outcomes";
 import { getDailyClosingPrices } from "@/lib/engine/timeline";
 
-interface ThresholdHit {
+interface MinPriceHit {
   candidate: string;
   day: Date;
   price: number;
 }
 
-function findFirstThresholdHitForCandidate(
+function findFirstMinPriceHitForCandidate(
   dailyPrices: Map<string, number>,
   windowStart: Date,
   closeDate: Date,
-  threshold: number,
+  minPrice: number,
 ): { day: Date; price: number } | null {
   const windowStartTime = startOfDay(windowStart).getTime();
   const closeTime = closeDate.getTime();
@@ -33,7 +37,7 @@ function findFirstThresholdHitForCandidate(
     });
 
   for (const [dayKey, price] of sortedDays) {
-    if (price > threshold) {
+    if (price >= minPrice) {
       return { day: new Date(dayKey), price };
     }
   }
@@ -41,21 +45,21 @@ function findFirstThresholdHitForCandidate(
   return null;
 }
 
-function findFirstThresholdHitInBet(
+function findFirstMinPriceHitInBet(
   bet: BetMarket,
   windowStart: Date,
   closeDate: Date,
-  threshold: number,
-): ThresholdHit | null {
+  minPrice: number,
+): MinPriceHit | null {
   const dailyByCandidate = getDailyClosingPrices(bet);
-  let earliest: ThresholdHit | null = null;
+  let earliest: MinPriceHit | null = null;
 
   for (const [candidate, dailyPrices] of dailyByCandidate.entries()) {
-    const hit = findFirstThresholdHitForCandidate(
+    const hit = findFirstMinPriceHitForCandidate(
       dailyPrices,
       windowStart,
       closeDate,
-      threshold,
+      minPrice,
     );
 
     if (!hit) continue;
@@ -73,17 +77,42 @@ function findFirstThresholdHitInBet(
   return earliest;
 }
 
+function buildReversalSlabRates(
+  eligible: ReversalOccurrenceBetResult[],
+): ReversalSlabWinRate[] {
+  return REVERSAL_OCCURRENCE_SLABS.map((slab) => {
+    const inSlab = eligible.filter((result) => result.hitSlab === slab.label);
+    const heldOnCount = inSlab.filter((result) => result.heldOn).length;
+    const reversals = inSlab.filter((result) => result.reversed).length;
+
+    return {
+      label: slab.label,
+      min: slab.min,
+      max: slab.max,
+      total: inSlab.length,
+      reversals,
+      reversalRate: inSlab.length > 0 ? reversals / inSlab.length : 0,
+      heldOnCount,
+      holdRate: inSlab.length > 0 ? heldOnCount / inSlab.length : 0,
+    };
+  });
+}
+
 export function analyzeBetReversalOccurrence(
   bet: BetMarket,
   periodDays: PeriodDays,
-  threshold: ReversalThreshold,
 ): ReversalOccurrenceBetResult {
   const outcomes = computeBetOutcomes(bet);
   const closeDate = getCloseDate(bet);
   const windowStart = addDays(startOfDay(closeDate), -periodDays);
   const hasEnoughHistory = bet.startDate.getTime() <= windowStart.getTime();
   const firstHit = hasEnoughHistory
-    ? findFirstThresholdHitInBet(bet, windowStart, closeDate, threshold)
+    ? findFirstMinPriceHitInBet(
+        bet,
+        windowStart,
+        closeDate,
+        REVERSAL_OCCURRENCE_MIN_PRICE,
+      )
     : null;
 
   const pickOutcome = firstHit
@@ -93,6 +122,7 @@ export function analyzeBetReversalOccurrence(
     : null;
 
   const heldOn = firstHit?.candidate === outcomes.winner;
+  const hitPrice = firstHit?.price ?? null;
 
   return {
     betId: bet.id,
@@ -100,11 +130,11 @@ export function analyzeBetReversalOccurrence(
     closeDate,
     windowStart,
     periodDays,
-    threshold,
     hasEnoughHistory,
     hasHit: firstHit != null,
     hitCandidate: firstHit?.candidate ?? null,
-    hitPrice: firstHit?.price ?? null,
+    hitPrice,
+    hitSlab: hitPrice != null ? getReversalOccurrenceSlabLabel(hitPrice) : null,
     hitAt: firstHit?.day ?? null,
     reversed: firstHit != null && !heldOn,
     pickFinalPlace: pickOutcome?.place ?? null,
@@ -116,10 +146,9 @@ export function analyzeBetReversalOccurrence(
 export function analyzeReversalOccurrence(
   bets: BetMarket[],
   periodDays: PeriodDays,
-  threshold: ReversalThreshold,
 ): ReversalOccurrenceAggregateResult {
   const betResults = bets.map((bet) =>
-    analyzeBetReversalOccurrence(bet, periodDays, threshold),
+    analyzeBetReversalOccurrence(bet, periodDays),
   );
   const eligible = betResults.filter(
     (result) => result.hasEnoughHistory && result.hasHit,
@@ -127,31 +156,17 @@ export function analyzeReversalOccurrence(
 
   const reversals = eligible.filter((result) => result.reversed).length;
   const heldOnCount = eligible.filter((result) => result.heldOn).length;
-  const finalPlaces = eligible
-    .map((result) => result.pickFinalPlace)
-    .filter((place): place is number => place != null);
-
-  const placeDistribution: Record<number, number> = {};
-  for (const place of finalPlaces) {
-    placeDistribution[place] = (placeDistribution[place] ?? 0) + 1;
-  }
 
   return {
     periodDays,
-    threshold,
+    minEntryPrice: REVERSAL_OCCURRENCE_MIN_PRICE,
     totalBets: bets.length,
     eligibleBets: eligible.length,
     reversals,
     reversalRate: eligible.length > 0 ? reversals / eligible.length : 0,
     heldOnCount,
     holdRate: eligible.length > 0 ? heldOnCount / eligible.length : 0,
-    placeDistribution,
-    hitPriceOutcomes: buildPriceWinRates(
-      eligible.map((result) => ({
-        price: result.hitPrice,
-        won: result.heldOn,
-      })),
-    ),
+    slabWinRates: buildReversalSlabRates(eligible),
     betResults,
   };
 }

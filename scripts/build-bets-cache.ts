@@ -4,7 +4,7 @@ import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
 import { analyzeReversalOccurrence } from "@/lib/analyses/reversal-occurrence";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
-import { PERIOD_OPTIONS, THRESHOLD_OPTIONS, reversalCacheKey } from "@/lib/analyses/types";
+import { PERIOD_OPTIONS, reversalOccurrenceCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   getCacheFilePath,
@@ -38,15 +38,11 @@ export function buildBetsCache(): BetsCacheFile {
     riseInMa[String(days)] = serializeRiseInMaAnalysis(
       analyzeRiseInMa(bets, days),
     );
-    for (const threshold of THRESHOLD_OPTIONS) {
-      console.log(
-        `  Precomputing ${days}-day reversal occurrence (>${threshold})...`,
+    console.log(`  Precomputing ${days}-day reversal occurrence analysis...`);
+    reversalOccurrence[reversalOccurrenceCacheKey(days)] =
+      serializeReversalOccurrenceAnalysis(
+        analyzeReversalOccurrence(bets, days),
       );
-      reversalOccurrence[reversalCacheKey(days, threshold)] =
-        serializeReversalOccurrenceAnalysis(
-          analyzeReversalOccurrence(bets, days, threshold),
-        );
-    }
   }
 
   const cache: BetsCacheFile = {

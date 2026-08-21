@@ -7,9 +7,7 @@ import type {
   PeriodDays,
   ReversalOccurrenceAggregateResult,
   RiseInMaAggregateResult,
-  ReversalThreshold,
 } from "@/lib/analyses/types";
-import { reversalCacheKey } from "@/lib/analyses/types";
 
 export interface SerializedPricePoint {
   loggedAt: string;
@@ -55,11 +53,11 @@ export interface SerializedReversalOccurrenceBetResult {
   closeDate: string;
   windowStart: string;
   periodDays: PeriodDays;
-  threshold: ReversalThreshold;
   hasEnoughHistory: boolean;
   hasHit: boolean;
   hitCandidate: string | null;
   hitPrice: number | null;
+  hitSlab: string | null;
   hitAt: string | null;
   reversed: boolean;
   pickFinalPlace: number | null;
@@ -69,15 +67,14 @@ export interface SerializedReversalOccurrenceBetResult {
 
 export interface SerializedReversalOccurrenceAggregateResult {
   periodDays: PeriodDays;
-  threshold: ReversalThreshold;
+  minEntryPrice: ReversalOccurrenceAggregateResult["minEntryPrice"];
   totalBets: number;
   eligibleBets: number;
   reversals: number;
   reversalRate: number;
   heldOnCount: number;
   holdRate: number;
-  placeDistribution: Record<number, number>;
-  hitPriceOutcomes: ReversalOccurrenceAggregateResult["hitPriceOutcomes"];
+  slabWinRates: ReversalOccurrenceAggregateResult["slabWinRates"];
   betResults: SerializedReversalOccurrenceBetResult[];
 }
 
@@ -205,26 +202,25 @@ export function serializeReversalOccurrenceAnalysis(
 ): SerializedReversalOccurrenceAggregateResult {
   return {
     periodDays: analysis.periodDays,
-    threshold: analysis.threshold,
+    minEntryPrice: analysis.minEntryPrice,
     totalBets: analysis.totalBets,
     eligibleBets: analysis.eligibleBets,
     reversals: analysis.reversals,
     reversalRate: analysis.reversalRate,
     heldOnCount: analysis.heldOnCount,
     holdRate: analysis.holdRate,
-    placeDistribution: analysis.placeDistribution,
-    hitPriceOutcomes: analysis.hitPriceOutcomes,
+    slabWinRates: analysis.slabWinRates,
     betResults: analysis.betResults.map((result) => ({
       betId: result.betId,
       betName: result.betName,
       closeDate: result.closeDate.toISOString(),
       windowStart: result.windowStart.toISOString(),
       periodDays: result.periodDays,
-      threshold: result.threshold,
       hasEnoughHistory: result.hasEnoughHistory,
       hasHit: result.hasHit,
       hitCandidate: result.hitCandidate,
       hitPrice: result.hitPrice,
+      hitSlab: result.hitSlab,
       hitAt: result.hitAt?.toISOString() ?? null,
       reversed: result.reversed,
       pickFinalPlace: result.pickFinalPlace,
@@ -238,11 +234,20 @@ export function deserializeReversalOccurrenceAnalysis(
   analysis: SerializedReversalOccurrenceAggregateResult,
 ): ReversalOccurrenceAggregateResult {
   return {
-    ...analysis,
+    periodDays: analysis.periodDays,
+    minEntryPrice: analysis.minEntryPrice ?? 0.5,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    reversals: analysis.reversals,
+    reversalRate: analysis.reversalRate,
+    heldOnCount: analysis.heldOnCount,
+    holdRate: analysis.holdRate,
+    slabWinRates: analysis.slabWinRates ?? [],
     betResults: analysis.betResults.map((result) => ({
       ...result,
       closeDate: new Date(result.closeDate),
       windowStart: new Date(result.windowStart),
+      hitSlab: result.hitSlab ?? null,
       hitAt: result.hitAt ? new Date(result.hitAt) : null,
     })),
   };

@@ -1,18 +1,14 @@
 import { Suspense } from "react";
 import { ReversalOccurrenceView } from "@/components/reversal-occurrence-view";
-import {
-  AnalysisNav,
-  PeriodSelector,
-  ThresholdSelector,
-} from "@/components/analysis-nav";
+import { AnalysisNav, PeriodSelector } from "@/components/analysis-nav";
 import { getReversalOccurrenceAnalysis } from "@/lib/analyses/get-reversal-occurrence";
-import type { PeriodDays, ReversalThreshold } from "@/lib/analyses/types";
+import type { PeriodDays } from "@/lib/analyses/types";
 import { loadAllBets } from "@/lib/parser/load-bets";
 
 export const dynamic = "force-dynamic";
 
 interface ReversalOccurrencePageProps {
-  searchParams: Promise<{ days?: string; threshold?: string }>;
+  searchParams: Promise<{ days?: string }>;
 }
 
 function parsePeriodDays(value?: string): PeriodDays {
@@ -23,28 +19,13 @@ function parsePeriodDays(value?: string): PeriodDays {
   return 14;
 }
 
-function parseThreshold(value?: string): ReversalThreshold {
-  const parsed = Number.parseFloat(value ?? "0.8");
-  if (
-    parsed === 0.5 ||
-    parsed === 0.6 ||
-    parsed === 0.7 ||
-    parsed === 0.8 ||
-    parsed === 0.9
-  ) {
-    return parsed;
-  }
-  return 0.8;
-}
-
 export default async function ReversalOccurrencePage({
   searchParams,
 }: ReversalOccurrencePageProps) {
   const params = await searchParams;
   const periodDays = parsePeriodDays(params.days);
-  const threshold = parseThreshold(params.threshold);
   const { failures } = loadAllBets();
-  const analysis = getReversalOccurrenceAnalysis(periodDays, threshold);
+  const analysis = getReversalOccurrenceAnalysis(periodDays);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
@@ -57,15 +38,12 @@ export default async function ReversalOccurrencePage({
         </h1>
         <p className="max-w-3xl text-lg text-zinc-600">
           In the last 7, 14, or 21 days, find the first time any candidate
-          crosses above a price threshold. See how often they reversed and lost
-          vs held on to win at close.
+          reaches $0.50 or above. Compare reversal vs held-on rates by the price
+          slab at that first hit ($0.50–$0.60 through $0.90–$1.00).
         </p>
         <AnalysisNav active="reversal-occurrence" />
         <Suspense fallback={<div className="h-10" />}>
-          <div className="flex flex-wrap items-center gap-3">
-            <PeriodSelector selected={periodDays} />
-            <ThresholdSelector selected={threshold} />
-          </div>
+          <PeriodSelector selected={periodDays} />
         </Suspense>
       </section>
 

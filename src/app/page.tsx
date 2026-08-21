@@ -89,16 +89,15 @@ export default function HomePage() {
             </p>
           </Link>
           <Link
-            href="/analyze/reversal-occurrence?days=14&threshold=0.8"
+            href="/analyze/reversal-occurrence?days=14"
             className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
           >
             <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
               Reversal Occurrence
             </h3>
             <p className="mt-2 text-sm text-zinc-600">
-              First time a candidate hits above $0.50–$0.90 in the window —
-              track reversal vs held-on rate.
-              track how often they reversed vs held on to win.
+              First hit ≥ $0.50 grouped into price slabs ($0.50–$0.60 through
+              $0.90–$1.00) — compare reversal vs held-on rate by slab.
             </p>
           </Link>
         </div>
