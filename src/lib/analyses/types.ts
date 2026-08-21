@@ -93,15 +93,38 @@ export interface RiseInMaAggregateResult {
   betResults: RiseInMaBetResult[];
 }
 
-export type ReversalThreshold = 0.5 | 0.6 | 0.7 | 0.8 | 0.9;
+export const REVERSAL_OCCURRENCE_MIN_PRICE = 0.5;
 
-export const THRESHOLD_OPTIONS: ReversalThreshold[] = [0.5, 0.6, 0.7, 0.8, 0.9];
+export const REVERSAL_OCCURRENCE_SLABS = [
+  { label: "$0.50–$0.60", min: 0.5, max: 0.6 },
+  { label: "$0.60–$0.70", min: 0.6, max: 0.7 },
+  { label: "$0.70–$0.80", min: 0.7, max: 0.8 },
+  { label: "$0.80–$0.90", min: 0.8, max: 0.9 },
+  { label: "$0.90–$1.00", min: 0.9, max: 1.01 },
+] as const;
 
-export function reversalCacheKey(
-  periodDays: PeriodDays,
-  threshold: ReversalThreshold,
-): string {
-  return `${periodDays}-${threshold}`;
+export function reversalOccurrenceCacheKey(periodDays: PeriodDays): string {
+  return String(periodDays);
+}
+
+export function getReversalOccurrenceSlabLabel(price: number): string | null {
+  for (const slab of REVERSAL_OCCURRENCE_SLABS) {
+    if (price >= slab.min && price < slab.max) {
+      return slab.label;
+    }
+  }
+  return null;
+}
+
+export interface ReversalSlabWinRate {
+  label: string;
+  min: number;
+  max: number;
+  total: number;
+  reversals: number;
+  reversalRate: number;
+  heldOnCount: number;
+  holdRate: number;
 }
 
 export interface ReversalOccurrenceBetResult {
@@ -110,11 +133,11 @@ export interface ReversalOccurrenceBetResult {
   closeDate: Date;
   windowStart: Date;
   periodDays: PeriodDays;
-  threshold: ReversalThreshold;
   hasEnoughHistory: boolean;
   hasHit: boolean;
   hitCandidate: string | null;
   hitPrice: number | null;
+  hitSlab: string | null;
   hitAt: Date | null;
   reversed: boolean;
   pickFinalPlace: number | null;
@@ -124,15 +147,14 @@ export interface ReversalOccurrenceBetResult {
 
 export interface ReversalOccurrenceAggregateResult {
   periodDays: PeriodDays;
-  threshold: ReversalThreshold;
+  minEntryPrice: typeof REVERSAL_OCCURRENCE_MIN_PRICE;
   totalBets: number;
   eligibleBets: number;
   reversals: number;
   reversalRate: number;
   heldOnCount: number;
   holdRate: number;
-  placeDistribution: Record<number, number>;
-  hitPriceOutcomes: PriceBracketWinRate[];
+  slabWinRates: ReversalSlabWinRate[];
   betResults: ReversalOccurrenceBetResult[];
 }
 

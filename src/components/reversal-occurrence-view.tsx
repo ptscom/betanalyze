@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ReversalOccurrenceAggregateResult } from "@/lib/analyses/types";
+import { REVERSAL_OCCURRENCE_MIN_PRICE } from "@/lib/analyses/types";
 import { formatDate, formatPercent, formatPlace, formatPrice } from "@/lib/utils/format";
 
 interface ReversalOccurrenceViewProps {
@@ -24,58 +25,92 @@ export function ReversalOccurrenceView({
     (result) => result.hasEnoughHistory && result.hasHit,
   );
 
-  const placeChartData = Object.entries(analysis.placeDistribution)
-    .map(([place, count]) => ({
-      place: Number(place),
-      placeLabel: formatPlace(Number(place)),
-      count,
-    }))
-    .sort((a, b) => a.place - b.place);
+  const slabRows = analysis.slabWinRates;
 
-  const bracketRows = analysis.hitPriceOutcomes.filter((row) => row.total > 0);
-
-  const outcomeChartData = bracketRows.map((row) => ({
-    bracket: row.label,
-    Reversed: row.total - row.becameWinner,
-    "Held on (won)": row.becameWinner,
+  const reversalRateChartData = slabRows.map((row) => ({
+    slab: row.label,
+    reversalRate: row.reversalRate,
+    holdRate: row.holdRate,
   }));
+
+  const outcomeChartData = slabRows
+    .filter((row) => row.total > 0)
+    .map((row) => ({
+      slab: row.label,
+      Reversed: row.reversals,
+      "Held on (won)": row.heldOnCount,
+    }));
 
   return (
     <div className="space-y-8">
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard
-          label="Hit above threshold"
+          label="Eligible bets"
           value={String(analysis.eligibleBets)}
-          hint={`bets with first hit > $${analysis.threshold.toFixed(1)}`}
+          hint={`first hit ≥ $${REVERSAL_OCCURRENCE_MIN_PRICE.toFixed(2)}`}
         />
         <StatCard
-          label="Reversal rate"
+          label="Overall reversal rate"
           value={formatPercent(analysis.reversalRate)}
           hint={`${analysis.reversals} ended as loser`}
         />
         <StatCard
-          label="Held on (won)"
+          label="Overall held on (won)"
           value={formatPercent(analysis.holdRate)}
           hint={`${analysis.heldOnCount} became winner`}
         />
         <StatCard
           label="Lookback window"
           value={`${analysis.periodDays} days`}
-          hint={`threshold > $${analysis.threshold.toFixed(1)}`}
+          hint="one slab per bet"
         />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
         <ChartCard
-          title="Reversal vs held on by price at hit"
-          description={`When a candidate first crossed $${analysis.threshold.toFixed(1)} in the window, how many reversed vs held on to win.`}
+          title="Reversal rate by price slab"
+          description="Each bet is assigned to exactly one slab based on the closing price on the day of first hit (≥ $0.50)."
+        >
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reversalRateChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="slab"
+                  tick={{ fontSize: 10 }}
+                  angle={-25}
+                  textAnchor="end"
+                  height={70}
+                />
+                <YAxis
+                  tickFormatter={(value) => `${(Number(value) * 100).toFixed(0)}%`}
+                  domain={[0, 1]}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip
+                  formatter={(value) => formatPercent(Number(value))}
+                />
+                <Bar
+                  dataKey="reversalRate"
+                  name="Reversal rate"
+                  fill="#ef4444"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        <ChartCard
+          title="Reversal vs held on by slab"
+          description="Stacked counts per slab — where reversal rates differ most."
         >
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={outcomeChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
-                  dataKey="bracket"
+                  dataKey="slab"
                   tick={{ fontSize: 10 }}
                   angle={-25}
                   textAnchor="end"
@@ -84,12 +119,7 @@ export function ReversalOccurrenceView({
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Bar
-                  dataKey="Reversed"
-                  stackId="a"
-                  fill="#ef4444"
-                  radius={[0, 0, 0, 0]}
-                />
+                <Bar dataKey="Reversed" stackId="a" fill="#ef4444" />
                 <Bar
                   dataKey="Held on (won)"
                   stackId="a"
@@ -100,39 +130,22 @@ export function ReversalOccurrenceView({
             </ResponsiveContainer>
           </div>
         </ChartCard>
-
-        <ChartCard
-          title="Final place after hitting threshold"
-          description="Where candidates finished at close after first crossing the threshold."
-        >
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={placeChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="placeLabel" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h3 className="text-lg font-semibold text-zinc-900">
-          Price at first hit vs outcome
+          Reversal rate by price slab at first hit
         </h3>
         <p className="mt-1 text-sm text-zinc-600">
-          Price when the candidate first exceeded ${analysis.threshold.toFixed(1)}{" "}
-          in the window, and whether they reversed or held on to win.
+          Half-open slabs: $0.50–$0.60 means ≥ $0.50 and &lt; $0.60. Exactly
+          $0.60 falls in the next slab.
         </p>
         <div className="mt-4 overflow-hidden rounded-lg border border-zinc-200">
           <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead className="bg-zinc-50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
-                  Price at first hit
+                  Slab at first hit
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
                   Bets
@@ -146,33 +159,37 @@ export function ReversalOccurrenceView({
                 <th className="px-4 py-3 text-left font-medium text-zinc-600">
                   Reversal rate
                 </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  Hold rate
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {bracketRows.length === 0 ? (
+              {slabRows.every((row) => row.total === 0) ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-6 text-center text-zinc-500"
                   >
-                    No threshold hits in this window.
+                    No candidates reached $0.50+ in this window.
                   </td>
                 </tr>
               ) : (
-                bracketRows.map((row) => (
+                slabRows.map((row) => (
                   <tr key={row.label} className="hover:bg-zinc-50">
                     <td className="px-4 py-3 font-medium text-zinc-900">
                       {row.label}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">{row.total}</td>
-                    <td className="px-4 py-3 text-red-700">
-                      {row.total - row.becameWinner}
-                    </td>
+                    <td className="px-4 py-3 text-red-700">{row.reversals}</td>
                     <td className="px-4 py-3 text-green-700">
-                      {row.becameWinner}
+                      {row.heldOnCount}
                     </td>
                     <td className="px-4 py-3 font-semibold text-zinc-900">
-                      {formatPercent(1 - row.winRate)}
+                      {formatPercent(row.reversalRate)}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {formatPercent(row.holdRate)}
                     </td>
                   </tr>
                 ))
@@ -186,20 +203,20 @@ export function ReversalOccurrenceView({
         <h3 className="text-lg font-semibold text-zinc-900">How to read this</h3>
         <ul className="mt-3 space-y-2 text-sm text-zinc-600">
           <li>
-            In the last {analysis.periodDays} days, we find the first time any
-            candidate&apos;s price goes above ${analysis.threshold.toFixed(1)}.
+            In the last {analysis.periodDays} days, we find the first day any
+            candidate&apos;s daily close is ≥ $0.50.
           </li>
           <li>
-            If multiple candidates hit the threshold, the earliest occurrence
-            in the window is used for that bet.
+            That candidate and that day&apos;s close price assign the bet to one
+            slab — even if price later moves to a higher slab.
           </li>
           <li>
-            <strong>Reversed</strong> means they hit the threshold but did not
-            end as the final winner at close.
+            If multiple candidates qualify on the same earliest day, the earliest
+            candidate name (alphabetically) wins for that bet.
           </li>
           <li>
-            <strong>Held on</strong> means they hit the threshold and still won
-            at close.
+            <strong>Reversed</strong> = hit the slab but did not win at close.
+            <strong> Held on</strong> = hit the slab and still won.
           </li>
         </ul>
       </section>
@@ -208,7 +225,7 @@ export function ReversalOccurrenceView({
         <div>
           <h2 className="text-2xl font-semibold text-zinc-900">Bet-by-bet results</h2>
           <p className="mt-1 text-sm text-zinc-600">
-            First threshold hit in the window and whether that candidate reversed.
+            First hit ≥ $0.50 in the window, assigned slab, and outcome.
           </p>
         </div>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -221,6 +238,9 @@ export function ReversalOccurrenceView({
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Candidate
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                    Slab
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-600">
                     Price at hit
@@ -247,6 +267,9 @@ export function ReversalOccurrenceView({
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {result.hitCandidate}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {result.hitSlab ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
                       {result.hitPrice != null

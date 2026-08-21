@@ -7,9 +7,8 @@ import type {
   PeriodDays,
   ReversalOccurrenceAggregateResult,
   RiseInMaAggregateResult,
-  ReversalThreshold,
 } from "@/lib/analyses/types";
-import { reversalCacheKey } from "@/lib/analyses/types";
+import { reversalOccurrenceCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
@@ -225,10 +224,11 @@ export function getCachedRiseInMa(
 
 export function getCachedReversalOccurrence(
   periodDays: PeriodDays,
-  threshold: ReversalThreshold,
 ): ReversalOccurrenceAggregateResult | null {
   const data = ensureCacheLoaded();
-  return data.reversalOccurrence.get(reversalCacheKey(periodDays, threshold)) ?? null;
+  return (
+    data.reversalOccurrence.get(reversalOccurrenceCacheKey(periodDays)) ?? null
+  );
 }
 
 export function clearBetsMemoryCache(): void {
