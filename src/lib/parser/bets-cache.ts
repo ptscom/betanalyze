@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
 import type {
+  ConsecutiveDaysAggregateResult,
   FirstCrossoverAggregateResult,
   GapChangeAggregateResult,
   PeriodAggregateResult,
@@ -113,6 +114,37 @@ export interface SerializedGapChangeAggregateResult {
   betResults: SerializedGapChangeBetResult[];
 }
 
+export interface SerializedConsecutiveDaysBetResult {
+  betId: string;
+  betName: string;
+  closeDate: string;
+  windowStart: string;
+  periodDays: PeriodDays;
+  direction: ConsecutiveDaysAggregateResult["direction"];
+  streakLength: ConsecutiveDaysAggregateResult["streakLength"];
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalAt: string | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface SerializedConsecutiveDaysAggregateResult {
+  direction: ConsecutiveDaysAggregateResult["direction"];
+  streakLength: ConsecutiveDaysAggregateResult["streakLength"];
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: ConsecutiveDaysAggregateResult["pickPriceWinRates"];
+  betResults: SerializedConsecutiveDaysBetResult[];
+}
+
 export interface SerializedRiseInMaBetResult {
   betId: string;
   betName: string;
@@ -193,6 +225,8 @@ export interface BetsCacheFile {
   riseInMa: Record<string, SerializedRiseInMaAggregateResult>;
   gapDecrease: Record<string, SerializedGapChangeAggregateResult>;
   gapIncrease: Record<string, SerializedGapChangeAggregateResult>;
+  consecutiveUp: Record<string, SerializedConsecutiveDaysAggregateResult>;
+  consecutiveDown: Record<string, SerializedConsecutiveDaysAggregateResult>;
   reversalOccurrence: Record<string, SerializedReversalOccurrenceAggregateResult>;
 }
 
@@ -329,6 +363,53 @@ export function serializeGapChangeAnalysis(
 export function deserializeGapChangeAnalysis(
   analysis: SerializedGapChangeAggregateResult,
 ): GapChangeAggregateResult {
+  return {
+    ...analysis,
+    betResults: analysis.betResults.map((result) => ({
+      ...result,
+      closeDate: new Date(result.closeDate),
+      windowStart: new Date(result.windowStart),
+      signalAt: result.signalAt ? new Date(result.signalAt) : null,
+    })),
+  };
+}
+
+export function serializeConsecutiveDaysAnalysis(
+  analysis: ConsecutiveDaysAggregateResult,
+): SerializedConsecutiveDaysAggregateResult {
+  return {
+    direction: analysis.direction,
+    streakLength: analysis.streakLength,
+    periodDays: analysis.periodDays,
+    totalBets: analysis.totalBets,
+    eligibleBets: analysis.eligibleBets,
+    picksWhoWon: analysis.picksWhoWon,
+    winRate: analysis.winRate,
+    placeDistribution: analysis.placeDistribution,
+    pickPriceWinRates: analysis.pickPriceWinRates,
+    betResults: analysis.betResults.map((result) => ({
+      betId: result.betId,
+      betName: result.betName,
+      closeDate: result.closeDate.toISOString(),
+      windowStart: result.windowStart.toISOString(),
+      periodDays: result.periodDays,
+      direction: result.direction,
+      streakLength: result.streakLength,
+      hasEnoughHistory: result.hasEnoughHistory,
+      hasSignal: result.hasSignal,
+      signalCandidate: result.signalCandidate,
+      signalPrice: result.signalPrice,
+      signalAt: result.signalAt?.toISOString() ?? null,
+      pickFinalPlace: result.pickFinalPlace,
+      pickWon: result.pickWon,
+      actualWinner: result.actualWinner,
+    })),
+  };
+}
+
+export function deserializeConsecutiveDaysAnalysis(
+  analysis: SerializedConsecutiveDaysAggregateResult,
+): ConsecutiveDaysAggregateResult {
   return {
     ...analysis,
     betResults: analysis.betResults.map((result) => ({

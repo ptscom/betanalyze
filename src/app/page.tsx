@@ -113,6 +113,30 @@ export default function HomePage() {
             </p>
           </Link>
           <Link
+            href="/analyze/consecutive-up?days=14&streak=3"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Consecutive Up Days
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with 3 or 5 consecutive rising daily closes in the
+              window — track win rate by signal price.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/consecutive-down?days=14&streak=3"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Consecutive Down Days
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with 3 or 5 consecutive falling daily closes in the
+              window — track win rate by signal price.
+            </p>
+          </Link>
+          <Link
             href="/analyze/reversal-occurrence?days=14"
             className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
           >

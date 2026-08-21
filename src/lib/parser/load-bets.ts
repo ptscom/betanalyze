@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
 import type {
+  ConsecutiveDaysAggregateResult,
+  ConsecutiveStreakLength,
   FirstCrossoverAggregateResult,
   GapChangeAggregateResult,
   PeriodAggregateResult,
@@ -9,10 +11,11 @@ import type {
   ReversalOccurrenceAggregateResult,
   RiseInMaAggregateResult,
 } from "@/lib/analyses/types";
-import { reversalOccurrenceCacheKey } from "@/lib/analyses/types";
+import { consecutiveDaysCacheKey, reversalOccurrenceCacheKey } from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   deserializeBet,
+  deserializeConsecutiveDaysAnalysis,
   deserializeFirstCrossoverAnalysis,
   deserializeGapChangeAnalysis,
   deserializePeriodAnalysis,
@@ -61,6 +64,8 @@ interface LoadedBetsData {
   riseInMa: Map<PeriodDays, RiseInMaAggregateResult>;
   gapDecrease: Map<PeriodDays, GapChangeAggregateResult>;
   gapIncrease: Map<PeriodDays, GapChangeAggregateResult>;
+  consecutiveUp: Map<string, ConsecutiveDaysAggregateResult>;
+  consecutiveDown: Map<string, ConsecutiveDaysAggregateResult>;
   reversalOccurrence: Map<string, ReversalOccurrenceAggregateResult>;
 }
 
@@ -133,6 +138,16 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     );
   }
 
+  const consecutiveUp = new Map<string, ConsecutiveDaysAggregateResult>();
+  for (const [key, analysis] of Object.entries(raw.consecutiveUp ?? {})) {
+    consecutiveUp.set(key, deserializeConsecutiveDaysAnalysis(analysis));
+  }
+
+  const consecutiveDown = new Map<string, ConsecutiveDaysAggregateResult>();
+  for (const [key, analysis] of Object.entries(raw.consecutiveDown ?? {})) {
+    consecutiveDown.set(key, deserializeConsecutiveDaysAnalysis(analysis));
+  }
+
   const reversalOccurrence = new Map<string, ReversalOccurrenceAggregateResult>();
   for (const [key, analysis] of Object.entries(raw.reversalOccurrence ?? {})) {
     reversalOccurrence.set(key, deserializeReversalOccurrenceAnalysis(analysis));
@@ -146,6 +161,8 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     riseInMa,
     gapDecrease,
     gapIncrease,
+    consecutiveUp,
+    consecutiveDown,
     reversalOccurrence,
   };
 }
@@ -171,6 +188,8 @@ function ensureCacheLoaded(): LoadedBetsData {
     riseInMa: new Map(),
     gapDecrease: new Map(),
     gapIncrease: new Map(),
+    consecutiveUp: new Map(),
+    consecutiveDown: new Map(),
     reversalOccurrence: new Map(),
   };
 
@@ -244,6 +263,29 @@ export function getCachedRiseInMa(
 ): RiseInMaAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.riseInMa.get(periodDays) ?? null;
+}
+
+export function getCachedConsecutiveUpDays(
+  periodDays: PeriodDays,
+  streakLength: ConsecutiveStreakLength,
+): ConsecutiveDaysAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return (
+    data.consecutiveUp.get(consecutiveDaysCacheKey(periodDays, "up", streakLength)) ??
+    null
+  );
+}
+
+export function getCachedConsecutiveDownDays(
+  periodDays: PeriodDays,
+  streakLength: ConsecutiveStreakLength,
+): ConsecutiveDaysAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return (
+    data.consecutiveDown.get(
+      consecutiveDaysCacheKey(periodDays, "down", streakLength),
+    ) ?? null
+  );
 }
 
 export function getCachedGapDecrease(
