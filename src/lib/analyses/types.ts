@@ -129,6 +129,51 @@ export interface GapChangeAggregateResult {
   betResults: GapChangeBetResult[];
 }
 
+export type ConsecutiveDayDirection = "up" | "down";
+
+export type ConsecutiveStreakLength = 3 | 5;
+
+export const CONSECUTIVE_STREAK_OPTIONS: ConsecutiveStreakLength[] = [3, 5];
+
+export function consecutiveDaysCacheKey(
+  periodDays: PeriodDays,
+  direction: ConsecutiveDayDirection,
+  streakLength: ConsecutiveStreakLength,
+): string {
+  return `${periodDays}-${direction}-${streakLength}`;
+}
+
+export interface ConsecutiveDaysBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  direction: ConsecutiveDayDirection;
+  streakLength: ConsecutiveStreakLength;
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalAt: Date | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface ConsecutiveDaysAggregateResult {
+  direction: ConsecutiveDayDirection;
+  streakLength: ConsecutiveStreakLength;
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: PriceBracketWinRate[];
+  betResults: ConsecutiveDaysBetResult[];
+}
+
 export const REVERSAL_OCCURRENCE_MIN_PRICE = 0.5;
 
 export const REVERSAL_OCCURRENCE_SLABS = [

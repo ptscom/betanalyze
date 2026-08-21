@@ -2,17 +2,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
 import {
+  analyzeConsecutiveDownDays,
+  analyzeConsecutiveUpDays,
+} from "@/lib/analyses/consecutive-days";
+import {
   analyzeGapDecrease,
   analyzeGapIncrease,
 } from "@/lib/analyses/gap-change";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
 import { analyzeReversalOccurrence } from "@/lib/analyses/reversal-occurrence";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
-import { PERIOD_OPTIONS, reversalOccurrenceCacheKey } from "@/lib/analyses/types";
+import {
+  CONSECUTIVE_STREAK_OPTIONS,
+  PERIOD_OPTIONS,
+  consecutiveDaysCacheKey,
+  reversalOccurrenceCacheKey,
+} from "@/lib/analyses/types";
 import {
   type BetsCacheFile,
   getCacheFilePath,
   serializeBet,
+  serializeConsecutiveDaysAnalysis,
   serializeFirstCrossoverAnalysis,
   serializeGapChangeAnalysis,
   serializePeriodAnalysis,
@@ -31,6 +41,8 @@ export function buildBetsCache(): BetsCacheFile {
   const riseInMa: BetsCacheFile["riseInMa"] = {};
   const gapDecrease: BetsCacheFile["gapDecrease"] = {};
   const gapIncrease: BetsCacheFile["gapIncrease"] = {};
+  const consecutiveUp: BetsCacheFile["consecutiveUp"] = {};
+  const consecutiveDown: BetsCacheFile["consecutiveDown"] = {};
   const reversalOccurrence: BetsCacheFile["reversalOccurrence"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
@@ -53,6 +65,22 @@ export function buildBetsCache(): BetsCacheFile {
     gapIncrease[String(days)] = serializeGapChangeAnalysis(
       analyzeGapIncrease(bets, days),
     );
+    for (const streak of CONSECUTIVE_STREAK_OPTIONS) {
+      console.log(
+        `  Precomputing ${days}-day consecutive up (${streak} days) analysis...`,
+      );
+      consecutiveUp[consecutiveDaysCacheKey(days, "up", streak)] =
+        serializeConsecutiveDaysAnalysis(
+          analyzeConsecutiveUpDays(bets, days, streak),
+        );
+      console.log(
+        `  Precomputing ${days}-day consecutive down (${streak} days) analysis...`,
+      );
+      consecutiveDown[consecutiveDaysCacheKey(days, "down", streak)] =
+        serializeConsecutiveDaysAnalysis(
+          analyzeConsecutiveDownDays(bets, days, streak),
+        );
+    }
     console.log(`  Precomputing ${days}-day reversal occurrence analysis...`);
     reversalOccurrence[reversalOccurrenceCacheKey(days)] =
       serializeReversalOccurrenceAnalysis(
@@ -70,6 +98,8 @@ export function buildBetsCache(): BetsCacheFile {
     riseInMa,
     gapDecrease,
     gapIncrease,
+    consecutiveUp,
+    consecutiveDown,
     reversalOccurrence,
   };
 
