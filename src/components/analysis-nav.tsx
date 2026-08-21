@@ -45,6 +45,8 @@ interface AnalysisNavProps {
     | "period-performance"
     | "first-crossover"
     | "rise-in-ma"
+    | "gap-decrease"
+    | "gap-increase"
     | "reversal-occurrence";
 }
 
@@ -80,6 +82,26 @@ export function AnalysisNav({ active }: AnalysisNavProps) {
         }`}
       >
         Rise in MA
+      </Link>
+      <Link
+        href="/analyze/gap-decrease?days=14"
+        className={`rounded-full px-4 py-2 text-sm font-medium ${
+          active === "gap-decrease"
+            ? "bg-blue-600 text-white"
+            : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50"
+        }`}
+      >
+        Gap Decrease
+      </Link>
+      <Link
+        href="/analyze/gap-increase?days=14"
+        className={`rounded-full px-4 py-2 text-sm font-medium ${
+          active === "gap-increase"
+            ? "bg-blue-600 text-white"
+            : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50"
+        }`}
+      >
+        Gap Increase
       </Link>
       <Link
         href="/analyze/reversal-occurrence?days=14"

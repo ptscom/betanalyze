@@ -3,6 +3,7 @@ import path from "node:path";
 import type { BetMarket } from "@/lib/models/types";
 import type {
   FirstCrossoverAggregateResult,
+  GapChangeAggregateResult,
   PeriodAggregateResult,
   PeriodDays,
   ReversalOccurrenceAggregateResult,
@@ -13,6 +14,7 @@ import {
   type BetsCacheFile,
   deserializeBet,
   deserializeFirstCrossoverAnalysis,
+  deserializeGapChangeAnalysis,
   deserializePeriodAnalysis,
   deserializeReversalOccurrenceAnalysis,
   deserializeRiseInMaAnalysis,
@@ -57,6 +59,8 @@ interface LoadedBetsData {
   periodPerformance: Map<PeriodDays, PeriodAggregateResult>;
   firstCrossover: Map<PeriodDays, FirstCrossoverAggregateResult>;
   riseInMa: Map<PeriodDays, RiseInMaAggregateResult>;
+  gapDecrease: Map<PeriodDays, GapChangeAggregateResult>;
+  gapIncrease: Map<PeriodDays, GapChangeAggregateResult>;
   reversalOccurrence: Map<string, ReversalOccurrenceAggregateResult>;
 }
 
@@ -113,6 +117,22 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     );
   }
 
+  const gapDecrease = new Map<PeriodDays, GapChangeAggregateResult>();
+  for (const [days, analysis] of Object.entries(raw.gapDecrease ?? {})) {
+    gapDecrease.set(
+      Number(days) as PeriodDays,
+      deserializeGapChangeAnalysis(analysis),
+    );
+  }
+
+  const gapIncrease = new Map<PeriodDays, GapChangeAggregateResult>();
+  for (const [days, analysis] of Object.entries(raw.gapIncrease ?? {})) {
+    gapIncrease.set(
+      Number(days) as PeriodDays,
+      deserializeGapChangeAnalysis(analysis),
+    );
+  }
+
   const reversalOccurrence = new Map<string, ReversalOccurrenceAggregateResult>();
   for (const [key, analysis] of Object.entries(raw.reversalOccurrence ?? {})) {
     reversalOccurrence.set(key, deserializeReversalOccurrenceAnalysis(analysis));
@@ -124,6 +144,8 @@ function loadFromCacheFile(cachePath: string): LoadedBetsData {
     periodPerformance,
     firstCrossover,
     riseInMa,
+    gapDecrease,
+    gapIncrease,
     reversalOccurrence,
   };
 }
@@ -147,6 +169,8 @@ function ensureCacheLoaded(): LoadedBetsData {
     periodPerformance: new Map(),
     firstCrossover: new Map(),
     riseInMa: new Map(),
+    gapDecrease: new Map(),
+    gapIncrease: new Map(),
     reversalOccurrence: new Map(),
   };
 
@@ -220,6 +244,20 @@ export function getCachedRiseInMa(
 ): RiseInMaAggregateResult | null {
   const data = ensureCacheLoaded();
   return data.riseInMa.get(periodDays) ?? null;
+}
+
+export function getCachedGapDecrease(
+  periodDays: PeriodDays,
+): GapChangeAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.gapDecrease.get(periodDays) ?? null;
+}
+
+export function getCachedGapIncrease(
+  periodDays: PeriodDays,
+): GapChangeAggregateResult | null {
+  const data = ensureCacheLoaded();
+  return data.gapIncrease.get(periodDays) ?? null;
 }
 
 export function getCachedReversalOccurrence(

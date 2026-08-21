@@ -93,6 +93,42 @@ export interface RiseInMaAggregateResult {
   betResults: RiseInMaBetResult[];
 }
 
+export type GapChangeDirection = "decrease" | "increase";
+
+export interface GapChangeBetResult {
+  betId: string;
+  betName: string;
+  closeDate: Date;
+  windowStart: Date;
+  periodDays: PeriodDays;
+  direction: GapChangeDirection;
+  hasEnoughHistory: boolean;
+  hasSignal: boolean;
+  signalCandidate: string | null;
+  signalPrice: number | null;
+  signalGap: number | null;
+  leaderAtSignal: string | null;
+  leaderPriceAtSignal: number | null;
+  secondAtSignal: string | null;
+  secondPriceAtSignal: number | null;
+  signalAt: Date | null;
+  pickFinalPlace: number | null;
+  pickWon: boolean;
+  actualWinner: string | null;
+}
+
+export interface GapChangeAggregateResult {
+  direction: GapChangeDirection;
+  periodDays: PeriodDays;
+  totalBets: number;
+  eligibleBets: number;
+  picksWhoWon: number;
+  winRate: number;
+  placeDistribution: Record<number, number>;
+  pickPriceWinRates: PriceBracketWinRate[];
+  betResults: GapChangeBetResult[];
+}
+
 export const REVERSAL_OCCURRENCE_MIN_PRICE = 0.5;
 
 export const REVERSAL_OCCURRENCE_SLABS = [

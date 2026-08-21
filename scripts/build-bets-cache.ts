@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { analyzeFirstCrossover } from "@/lib/analyses/first-crossover";
+import {
+  analyzeGapDecrease,
+  analyzeGapIncrease,
+} from "@/lib/analyses/gap-change";
 import { analyzePeriodPerformance } from "@/lib/analyses/period-performance";
 import { analyzeReversalOccurrence } from "@/lib/analyses/reversal-occurrence";
 import { analyzeRiseInMa } from "@/lib/analyses/rise-in-ma";
@@ -10,6 +14,7 @@ import {
   getCacheFilePath,
   serializeBet,
   serializeFirstCrossoverAnalysis,
+  serializeGapChangeAnalysis,
   serializePeriodAnalysis,
   serializeReversalOccurrenceAnalysis,
   serializeRiseInMaAnalysis,
@@ -24,6 +29,8 @@ export function buildBetsCache(): BetsCacheFile {
   const periodPerformance: BetsCacheFile["periodPerformance"] = {};
   const firstCrossover: BetsCacheFile["firstCrossover"] = {};
   const riseInMa: BetsCacheFile["riseInMa"] = {};
+  const gapDecrease: BetsCacheFile["gapDecrease"] = {};
+  const gapIncrease: BetsCacheFile["gapIncrease"] = {};
   const reversalOccurrence: BetsCacheFile["reversalOccurrence"] = {};
   for (const days of PERIOD_OPTIONS) {
     console.log(`  Precomputing ${days}-day period analysis...`);
@@ -37,6 +44,14 @@ export function buildBetsCache(): BetsCacheFile {
     console.log(`  Precomputing ${days}-day rise in MA analysis...`);
     riseInMa[String(days)] = serializeRiseInMaAnalysis(
       analyzeRiseInMa(bets, days),
+    );
+    console.log(`  Precomputing ${days}-day gap decrease analysis...`);
+    gapDecrease[String(days)] = serializeGapChangeAnalysis(
+      analyzeGapDecrease(bets, days),
+    );
+    console.log(`  Precomputing ${days}-day gap increase analysis...`);
+    gapIncrease[String(days)] = serializeGapChangeAnalysis(
+      analyzeGapIncrease(bets, days),
     );
     console.log(`  Precomputing ${days}-day reversal occurrence analysis...`);
     reversalOccurrence[reversalOccurrenceCacheKey(days)] =
@@ -53,6 +68,8 @@ export function buildBetsCache(): BetsCacheFile {
     periodPerformance,
     firstCrossover,
     riseInMa,
+    gapDecrease,
+    gapIncrease,
     reversalOccurrence,
   };
 
