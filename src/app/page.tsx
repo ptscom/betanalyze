@@ -88,6 +88,66 @@ export default function HomePage() {
               average in the window — track win rate by signal price.
             </p>
           </Link>
+          <Link
+            href="/analyze/gap-decrease?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Gap Decrease
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              When #1–#2 gap shrinks for 2 days, track whether the runner-up
+              wins at close.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/gap-increase?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Gap Increase
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              When #1–#2 gap widens for 2 days, track whether the leader wins at
+              close.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/consecutive-up?days=14&streak=3"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Consecutive Up Days
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with 3 or 5 consecutive rising daily closes in the
+              window — track win rate by signal price.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/consecutive-down?days=14&streak=3"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Consecutive Down Days
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First candidate with 3 or 5 consecutive falling daily closes in the
+              window — track win rate by signal price.
+            </p>
+          </Link>
+          <Link
+            href="/analyze/reversal-occurrence?days=14"
+            className="group rounded-xl border border-zinc-200 bg-white p-6 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600">
+              Reversal Occurrence
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              First hit ≥ $0.50 grouped into price slabs ($0.50–$0.60 through
+              $0.90–$1.00) — compare reversal vs held-on rate by slab.
+            </p>
+          </Link>
         </div>
       </section>
 
